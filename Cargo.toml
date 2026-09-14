@@ -15,6 +15,13 @@ plotters-backend = "=0.3.7"
 serde_json = "1"
 tempfile = "3"
 
+[workspace.metadata.release]
+sign-commit = true
+sign-tag = true
+shared-version = true
+tag-message = "Release {{version}}"
+tag-name = "v{{version}}"
+
 [[workspace.metadata.dagger.modules]]
 name = "rust"
 hack.check = ["--locked", "--each-feature"]
