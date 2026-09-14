@@ -138,7 +138,7 @@ dependencies = [
 
 [[package]]
 name = "excalidraw-document"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "base64",
  "crc32fast",
@@ -152,7 +152,7 @@ dependencies = [
 
 [[package]]
 name = "excaliplot"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "plotters",
@@ -486,7 +486,7 @@ checksum = "df42e13c12958a16b3f7f4386b9ab1f3e7933914ecea48da7139435263a4172a"
 
 [[package]]
 name = "plotters-excalidraw"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "excalidraw-document",
  "plotters",

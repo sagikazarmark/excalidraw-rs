@@ -10,7 +10,7 @@ keywords = ["excalidraw", "plotters", "chart", "drawing", "visualization"]
 categories = ["visualization", "graphics"]
 
 [dependencies]
-plotters-excalidraw = { path = "../plotters-excalidraw", version = "0.1.0" }
+plotters-excalidraw = { path = "../plotters-excalidraw", version = "0.2.0" }
 
 chrono = { version = "0.4", default-features = false, features = ["std"] }
 plotters = { workspace = true }
