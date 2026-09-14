@@ -1,0 +1,19 @@
+{
+  "type": "excalidraw",
+  "version": 7,
+  "source": "fixture-source",
+  "futureRoot": {"keepInArchive": true},
+  "elements": [
+    {"type":"line","id":"line","points":[[0,0],[100,50]],"lastCommittedPoint":[1,2],"isDeleted":false},
+    {"type":"image","id":"image","fileId":"shared","isDeleted":false},
+    {"type":"image","id":"deleted","fileId":"dead","isDeleted":true},
+    {"type":"freedraw","id":"free","lastCommittedPoint":[3,4],"isDeleted":false},
+    {"type":"future","id":"future","fileId":"shared","future":17}
+  ],
+  "appState": {"gridSize":20,"gridStep":5,"gridModeEnabled":false,"viewBackgroundColor":"#fefefe","lockedMultiSelections":{"g":true},"zoom":{"value":2},"unknown":true},
+  "files": {
+    "shared":{"id":"shared","mimeType":"image/png","created":1,"dataURL":"data:image/png;base64,fixture","extension":true},
+    "dead":{"id":"dead"},
+    "unused":{"id":"unused"}
+  }
+}

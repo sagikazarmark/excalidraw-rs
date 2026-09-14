@@ -1,0 +1,24 @@
+[package]
+name = "plotters-excalidraw"
+version.workspace = true
+description = "A vector Plotters backend for editable native Excalidraw scenes"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["excalidraw", "plotters", "backend", "drawing", "visualization"]
+categories = ["visualization", "graphics"]
+
+[dependencies]
+excalidraw-document = { path = "../excalidraw-document", version = "0.1.0" }
+
+plotters-backend = { workspace = true }
+rustybuzz = "=0.20.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = { workspace = true }
+url = "2"
+uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+plotters = { workspace = true }
+tempfile = { workspace = true }

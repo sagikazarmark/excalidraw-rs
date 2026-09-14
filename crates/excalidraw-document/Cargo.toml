@@ -1,0 +1,40 @@
+[package]
+name = "excalidraw-document"
+version.workspace = true
+description = "Preserving typed Excalidraw scene documents, validation and versioned export"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["excalidraw", "json", "drawing", "document"]
+categories = ["encoding", "graphics"]
+
+[features]
+default = []
+embedded = ["dep:base64", "dep:flate2", "dep:crc32fast", "dep:roxmltree"]
+
+[dependencies]
+base64 = { version = "0.22", optional = true }
+crc32fast = { version = "1", optional = true }
+flate2 = { version = "1", optional = true }
+roxmltree = { version = "0.21", optional = true }
+ryu-js = "1"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["arbitrary_precision", "raw_value"] }
+
+[dev-dependencies]
+proptest = "1"
+
+[[bench]]
+name = "document"
+harness = false
+path = "tests/performance/document.rs"
+
+[[bench]]
+name = "authoring"
+harness = false
+path = "tests/performance/authoring.rs"
+
+[[example]]
+name = "embedded"
+required-features = ["embedded"]

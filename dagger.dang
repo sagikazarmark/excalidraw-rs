@@ -1,0 +1,372 @@
+type Excaliplot {
+  let source: Directory!
+  let rustContainer: Container!
+
+  let excalidrawSource: Directory! {
+    Dagger
+      .git("https://github.com/excalidraw/excalidraw.git")
+      .tag("v0.18.1")
+      .tree(discardGitDir: true)
+  }
+
+  new(ws: Workspace!, rustContainer: Container!) {
+    self.source = ws.directory("/", gitignore: true)
+    self.rustContainer = rustContainer
+
+    self
+  }
+
+  """
+  Build all workspace example executables.
+  """
+  let buildExamples: Directory! {
+    self
+      .rustContainer
+      .withExec(
+        [
+          "cargo", "build", "--locked", "--workspace", "--all-features", "--examples",
+          "--message-format", "json-render-diagnostics",
+        ],
+        redirectStdout: "/stdout.json",
+      )
+      .withExec(["cargo", "artifacts", "copy", "-i", "/stdout.json", "--out-dir", "/work/out"])
+      .directory("/work/out")
+  }
+
+  """
+  Run chart examples and collect their generated output.
+  """
+  examples: Directory! @check {
+    let container = self
+      .rustContainer
+      .withDirectory("/work/examples", self.buildExamples)
+
+    let examples = ["plotters_chart"] + self
+      .source
+      .directory("crates/excaliplot/examples")
+      .entries
+      .filter { _.hasSuffix(".rs") }
+      .map { _.trimSuffix(".rs") }
+
+    examples.reduce(Dagger.directory) { acc, example =>
+      acc.withDirectory(
+        "",
+        container
+          .withExec(["/work/examples/" + example])
+          .directory("output"),
+      )
+    }
+  }
+
+  """
+  Generate the metrics TTF from the pinned Latin shard.
+  """
+  fonts: Changeset! @generate {
+    let fonts = excalidrawSource.directory("packages/excalidraw/fonts/Excalifont")
+
+    let result = Dagger
+      .container
+      .from("python:3.13.7-slim-trixie")
+      .withExec(["pip", "install", "--no-cache-dir", "fonttools==4.63.0", "brotli==1.1.0"])
+      .withWorkdir("/work/src")
+      .withDirectory(".", fonts)
+      .withDirectory("/work/output", Dagger.directory)
+      .withExec([
+        "fonttools", "ttLib.woff2", "decompress",
+        "Excalifont-Regular-a88b72a24fb54c9f94e3b5fdaa7481c9.woff2",
+        "-o", "/work/output/Excalifont-Regular.ttf",
+      ])
+      .directory("/work/output")
+
+    self
+      .source
+      .withDirectory("crates/plotters-excalidraw/assets", result)
+      .changes(self.source)
+  }
+
+  """
+  Native editor compatibility checks using generated Rust examples.
+  """
+  compatibility: CompatibilityChecks! {
+    CompatibilityChecks(self.source, self.examples, self.rustContainer)
+  }
+}
+
+type ExampleMetadata {
+  packages: [ExamplePackage!]!
+}
+
+type ExamplePackage {
+  name: String!
+  targets: [ExampleTarget!]!
+}
+
+type ExampleTarget {
+  name: String!
+  kind: [String!]!
+}
+
+type CompatibilityChecks {
+  let source: Directory!
+  let examples: Directory!
+  let rustContainer: Container!
+
+  let playwrightVersion: String! = "v1.51.1-noble"
+  let expectedChromium: String! = "134.0.6998.35"
+
+  new(source: Directory!, examples: Directory!, rustContainer: Container!) {
+    self.source = source
+    self.examples = examples
+    self.rustContainer = rustContainer
+
+    self
+  }
+
+  """
+  Native chart editing and roundtrip checks in the pinned release editor.
+  """
+  charts: ChartCompatibilityChecks! {
+    ChartCompatibilityChecks(self.browserContainer, self.examples)
+  }
+
+  """
+  Document compatibility with the pinned release and snapshot editors.
+  """
+  document: DocumentCompatibilityChecks! {
+    DocumentCompatibilityChecks(self.browserContainer, self.source, self.rustContainer)
+  }
+
+  let browserContainer: Container! {
+    let source = self.source.directory("compatibility")
+
+    let container = Dagger
+      .container
+      .from("mcr.microsoft.com/playwright:" + self.playwrightVersion)
+      .withWorkdir("/work/src/compatibility")
+      .withDirectory(
+        ".",
+        source.filter(include: ["package.json", "package-lock.json"]),
+      )
+      .withMountedCache("/root/.npm", Dagger.cacheVolume("excaliplot-npm"))
+      .withExec(["npm", "ci"])
+
+    let chromium = container.withExec([
+      "node", "--input-type=module", "-e",
+      "import {chromium} from 'playwright-core'; console.log(chromium.executablePath())",
+    ]).stdout.trimSpace
+
+    container
+      .withEnvVariable("CHROMIUM_PATH", chromium)
+      .withEnvVariable("EXPECTED_CHROMIUM_VERSION", self.expectedChromium)
+      .withDirectory(".", source)
+      .withWorkdir("/work/src")
+  }
+}
+
+type ChartCompatibilityChecks {
+  let container: Container!
+  let examples: Directory!
+
+  new(container: Container!, examples: Directory!) {
+    self.container = container
+    self.examples = examples
+    self
+  }
+
+  """
+  Check all chart suites, including typography, chart families and density probes.
+  """
+  full: Directory! @check {
+    self.run("full").directory("/artifacts")
+  }
+
+  """
+  Check native composition and decorations.
+  """
+  composition: Directory! @check {
+    self.run("composition").directory("/artifacts")
+  }
+
+  """
+  Check native library import, insertion and editing.
+  """
+  library: Directory! @check {
+    self.run("library").directory("/artifacts")
+  }
+
+  """
+  Check native callout editing and clipboard copies.
+  """
+  callouts: Directory! @check {
+    self.run("callouts").directory("/artifacts")
+  }
+
+  """
+  Check native hyperlinks, provenance, editing and clipboard copies.
+  """
+  links: Directory! @check {
+    self.run("links").directory("/artifacts")
+  }
+
+  """
+  Inspect the executed container's exitCode, stdout, stderr and /artifacts even
+  after browser failure. This is not a check; input failures still propagate.
+  """
+  evidence(suite: String! = "links"): Container! {
+    self.run(suite, expect: ReturnType.ANY)
+  }
+
+  let run(suite: String!, expect: ReturnType! = ReturnType.SUCCESS): Container! {
+    let selector = if (suite == "composition") { "COMPOSITION_ONLY" } else if (suite == "library") { "LIBRARY_ONLY" } else if (suite == "callouts") { "CALLOUTS_ONLY" } else if (suite == "links") { "LINKS_ONLY" } else if (suite == "full") { "" } else { raise "suite must be full, composition, library, callouts or links" }
+
+    let fixtures = if (suite == "composition") { ["composition.excalidraw", "decorations/"] } else if (suite == "library") { ["library/"] } else if (suite == "callouts") { ["callouts.excalidraw"] } else { ["linked_chart.excalidraw"] }
+
+    let container = self
+      .container
+      .withDirectory("/work/src/output", self.examples)
+      .withDirectory(
+        "/artifacts/fixtures",
+        if (suite == "full") { self.examples } else {
+          self.examples.filter(include: fixtures)
+        },
+      )
+      .withEnvVariable("RESULTS_DIR", "/artifacts/browser")
+
+    if (selector != "") {
+      container = container.withEnvVariable(selector, "1")
+    }
+
+    container
+      # The harness creates /artifacts/browser and refuses existing output.
+      .withExec(["node", "compatibility/verify.mjs"], expect: expect)
+  }
+}
+
+type DocumentCompatibilityChecks {
+  let container: Container!
+  let source: Directory!
+  let rustContainer: Container!
+
+  new(container: Container!, source: Directory!, rustContainer: Container!) {
+    self.container = container
+    self.source = source
+    self.rustContainer = rustContainer
+    self
+  }
+
+  # Static helpers shared by release and snapshot browser checks.
+  let examples: Directory! {
+    let examples = self
+      .source
+      .directory("crates/excalidraw-document/examples")
+      .entries
+      .filter { _.hasSuffix(".rs") }
+      .map { _.trimSuffix(".rs") }
+
+    let arch = self.rustContainer.withExec(["uname", "-m"]).stdout.trimSpace
+    let target = if (arch == "x86_64" or arch == "aarch64") { arch + "-unknown-linux-musl" } else { raise "unsupported document helper architecture: " + arch }
+
+    self
+      .rustContainer
+      .withExec(["sh", "-ec", "apt-get update && apt-get install -y --no-install-recommends musl-tools && rm -rf /var/lib/apt/lists/*"])
+      .withExec(["rustup", "target", "add", target])
+      .withEnvVariable("CARGO_TARGET_X86_64_UNKNOWN_LINUX_MUSL_LINKER", "musl-gcc")
+      .withEnvVariable("CARGO_TARGET_AARCH64_UNKNOWN_LINUX_MUSL_LINKER", "musl-gcc")
+      .withExec(
+        [
+          "cargo", "build", "--locked", "--all-features", "-p", "excalidraw-document", "--examples",
+          "--target", target, "--message-format", "json-render-diagnostics",
+        ],
+        redirectStdout: "/stdout.json",
+      )
+      .withExec(["cargo", "artifacts", "copy", "-i", "/stdout.json", "--out-dir", "/work/document-examples"])
+      .directory("/work/document-examples")
+      .filter(include: examples)
+  }
+
+  """
+  Compare the release editor with Rust, including extended edits and PNG/SVG transports.
+  """
+  release: Directory! @check {
+    self.run("release").directory("/artifacts")
+  }
+
+  """
+  Audit pinned sources and compare the snapshot editor, including extended checks.
+  """
+  snapshot: Directory! @check {
+    self.run("snapshot").directory("/artifacts")
+  }
+
+  """
+  Inspect exitCode, stdout, stderr and /artifacts after audit or browser failure.
+  This is not a check; input failures still propagate.
+  """
+  evidence(editorProfile: String! = "release", extended: Boolean! = true): Container! {
+    self.run(editorProfile, extended: extended, expect: ReturnType.ANY)
+  }
+
+  let snapshotSource: Directory! {
+    Dagger
+      .container
+      .from("node:24.19.0-trixie-slim")
+      .withDirectory(
+        "/opt/excalidraw",
+        Dagger
+          .git("https://github.com/excalidraw/excalidraw.git")
+          .commit("afa3a653fc5d2b742adcbd5a6063187b056d2419")
+          .tree(discardGitDir: false),
+      )
+      .withWorkdir("/opt/excalidraw")
+      .withExec(["npm", "exec", "--yes", "--package=yarn@1.22.22", "--", "yarn", "install", "--frozen-lockfile", "--ignore-scripts"])
+      .directory("/opt/excalidraw")
+  }
+
+  let run(
+    profile: String!,
+    extended: Boolean! = true,
+    expect: ReturnType! = ReturnType.SUCCESS,
+  ): Container! {
+    if (profile != "release" and profile != "snapshot") {
+      raise "profile must be release or snapshot"
+    }
+
+    let container = self
+      .container
+      .withDirectory("/work/document-examples", self.examples)
+      .withEnvVariable("DOCUMENT_EXAMPLES_DIR", "/work/document-examples")
+      .withDirectory(
+        "/work/src/crates/excalidraw-document/tests/fixtures",
+        self.source.directory("crates/excalidraw-document/tests/fixtures"),
+      )
+      .withEnvVariable("DOCUMENT_RESULTS", "/artifacts")
+      .withEnvVariable("DOCUMENT_EXTENDED", if (extended) { "1" } else { "0" })
+      .withDirectory("/artifacts", Dagger.directory)
+
+    if (profile == "snapshot") {
+      container = container
+        .withDirectory("/opt/excalidraw", self.snapshotSource)
+        .withEnvVariable("EXCALIDRAW_SOURCE", "/opt/excalidraw")
+        .withFile(
+          "/work/src/crates/excalidraw-document/src/model.rs",
+          self.source.file("crates/excalidraw-document/src/model.rs"),
+        )
+        .withFile(
+          "/opt/excalidraw-release-types.ts",
+          Dagger
+            .git("https://github.com/excalidraw/excalidraw.git")
+            .tag("v0.18.1")
+            .tree
+            .file("packages/excalidraw/element/types.ts"),
+        )
+        .withEnvVariable("EXCALIDRAW_RELEASE_TYPES", "/opt/excalidraw-release-types.ts")
+
+      return container.withExec(
+        ["sh", "-ec", "node compatibility/document/audit.mjs && node compatibility/document/run.mjs"],
+        expect: expect,
+      )
+    }
+
+    container.withExec(["node", "compatibility/document/run.mjs"], expect: expect)
+  }
+}
