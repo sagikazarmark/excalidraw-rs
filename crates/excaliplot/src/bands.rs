@@ -162,7 +162,10 @@ impl<'a> BandChart<'a> {
         if self.name.trim().is_empty() {
             return Err(Error::Invalid("band label must not be empty"));
         }
-        crate::cartesian::validate_opacity(self.opacity, crate::cartesian::MARK_OPACITY)?;
+        crate::cartesian::validate_opacity(
+            self.opacity,
+            "band opacity must round to a visible value in 1..=100 percent",
+        )?;
         if !(1..=20).contains(&self.width) {
             return Err(Error::Invalid("band line width must be 1..=20 scene units"));
         }

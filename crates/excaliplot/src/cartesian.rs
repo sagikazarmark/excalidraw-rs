@@ -397,7 +397,10 @@ pub(crate) fn validate_order<X: PartialOrd, Y>(points: &[(X, Y)]) -> Result<(), 
 
 pub(crate) fn validate_scatter(radius: u32, opacity: f64) -> Result<(), Error> {
     validate_radius(radius)?;
-    validate_opacity(opacity, MARK_OPACITY)
+    validate_opacity(
+        opacity,
+        "scatter opacity must round to a visible value in 1..=100 percent",
+    )
 }
 
 pub(crate) fn validate_radius(radius: u32) -> Result<(), Error> {
@@ -459,10 +462,6 @@ pub(crate) fn single_legend_width(
 pub(crate) fn legend_left(width: u32, legend: u32) -> i32 {
     (width - MARGIN - legend + 12) as i32
 }
-
-/// The message used wherever the subject is a plotted mark's fill.
-pub(crate) const MARK_OPACITY: &str =
-    "scatter opacity must round to a visible value in 1..=100 percent";
 
 /// Reject an opacity that would not round to a visible native percent.
 ///

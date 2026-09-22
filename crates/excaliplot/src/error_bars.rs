@@ -204,7 +204,10 @@ impl<'a> ErrorBarChart<'a> {
             ));
         }
         crate::cartesian::validate_radius(self.radius)?;
-        crate::cartesian::validate_opacity(self.opacity, crate::cartesian::MARK_OPACITY)?;
+        crate::cartesian::validate_opacity(
+            self.opacity,
+            "error bar opacity must round to a visible value in 1..=100 percent",
+        )?;
         crate::typography::measure(self.interpretation, f64::from(TICK_SIZE))?;
         if self.interpretation.trim().is_empty() {
             return Err(Error::Invalid("interval interpretation must not be empty"));

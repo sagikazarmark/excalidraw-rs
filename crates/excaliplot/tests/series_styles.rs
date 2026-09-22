@@ -407,3 +407,60 @@ fn line_styles_preserve_vertices_repeats_identity_and_painter_order() {
     };
     assert_eq!(frame(&plain), frame(&styled));
 }
+
+#[test]
+fn an_invisible_opacity_is_reported_against_the_mark_that_carries_it() {
+    use excaliplot::{BandChart, ErrorBarChart, HistogramChart, VerticalInterval};
+    let series = [NamedSeries::new("S", &[(0., 5.)], BLUE).opacity(0.)];
+    for (error, subject) in [
+        (
+            LineChart::from_series(&series, 0.0..10.0, 0.0..10.0)
+                .render()
+                .err(),
+            "series opacity",
+        ),
+        (
+            ScatterChart::new(&[(0., 5.)], 0.0..10.0, 0.0..10.0)
+                .opacity(0.)
+                .render()
+                .err(),
+            "scatter opacity",
+        ),
+        (
+            HistogramChart::new(&[0., 1.], &[1.], 0.0..1.0, 0.0..1.0)
+                .opacity(0.)
+                .render()
+                .err(),
+            "histogram opacity",
+        ),
+        (
+            BandChart::new(
+                &[1., 2.],
+                &[2., 3.],
+                &[4., 5.],
+                "Range",
+                0.0..10.0,
+                0.0..10.0,
+            )
+            .opacity(0.)
+            .render()
+            .err(),
+            "band opacity",
+        ),
+        (
+            ErrorBarChart::new(
+                &[VerticalInterval::new(2., 2., 3., 8.)],
+                "Range",
+                0.0..10.0,
+                0.0..10.0,
+            )
+            .opacity(0.)
+            .render()
+            .err(),
+            "error bar opacity",
+        ),
+    ] {
+        let error = error.expect(subject).to_string();
+        assert!(error.contains(subject), "{subject}: {error}");
+    }
+}

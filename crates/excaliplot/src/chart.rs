@@ -756,7 +756,10 @@ impl<'a> Chart<'a> {
                 ));
             }
             if let Some(opacity) = series.opacity {
-                cartesian::validate_opacity(opacity, cartesian::MARK_OPACITY)?;
+                cartesian::validate_opacity(
+                    opacity,
+                    "series opacity must round to a visible value in 1..=100 percent",
+                )?;
             }
             if let Some((radius, _)) = series.marker {
                 cartesian::validate_radius(radius)?;

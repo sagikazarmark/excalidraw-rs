@@ -124,7 +124,10 @@ impl<'a> HistogramChart<'a> {
         frame.validate(self.tick_count)?;
         self.x_format.validate()?;
         self.y_format.validate()?;
-        crate::cartesian::validate_opacity(self.opacity, crate::cartesian::MARK_OPACITY)?;
+        crate::cartesian::validate_opacity(
+            self.opacity,
+            "histogram opacity must round to a visible value in 1..=100 percent",
+        )?;
         AxisScale::Linear.validate(&self.x)?;
         AxisScale::Linear.validate(&self.y)?;
         if self.y.start > 0. || self.y.end < 0. {
