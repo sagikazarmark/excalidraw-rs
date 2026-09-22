@@ -311,6 +311,65 @@ fn a_role_read_as_unknown_cannot_be_written_back() {
     assert!(matches!(refused, Err(Error::Invalid { what, .. }) if what == "user role"));
 }
 
+#[test]
+fn preferences_read_as_unknown_cannot_be_written_back() {
+    let unset = model::UserPreferences::default;
+    for (preferences, field) in [
+        (
+            model::UserPreferences {
+                scene_order: Some(model::SceneOrder::Unknown("random".into())),
+                ..unset()
+            },
+            "user preference sceneOrder",
+        ),
+        (
+            model::UserPreferences {
+                initial_redirect: Some(model::InitialRedirect::Unknown("home".into())),
+                ..unset()
+            },
+            "user preference initialRedirect",
+        ),
+        (
+            model::UserPreferences {
+                theme: Some(model::Theme::Unknown("bogus".into())),
+                ..unset()
+            },
+            "user preference theme",
+        ),
+        (
+            model::UserPreferences {
+                locale: Some(model::Locale::Unknown("xx".into())),
+                ..unset()
+            },
+            "user preference locale",
+        ),
+    ] {
+        let refused = op::UpdateUser {
+            user: UserId::new("u-1").unwrap(),
+            patch: model::UserPatch::new().preferences(preferences),
+        }
+        .request();
+        assert!(
+            matches!(refused, Err(Error::Invalid { what, .. }) if what == field),
+            "{field}: {refused:?}"
+        );
+    }
+
+    let listed = model::UserPreferences {
+        theme: Some(model::Theme::Dark),
+        locale: Some(model::Locale::De),
+        ..unset()
+    };
+    assert!(
+        op::UpdateUser {
+            user: UserId::new("u-1").unwrap(),
+            patch: model::UserPatch::new().preferences(listed),
+        }
+        .request()
+        .is_ok()
+    );
+}
+
 // ------------------------------------------------------------- invites and logs
 
 #[test]

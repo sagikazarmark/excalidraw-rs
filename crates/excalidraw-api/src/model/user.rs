@@ -105,6 +105,52 @@ pub struct UserPreferences {
     pub locale_suggestion_dismissed: Option<bool>,
 }
 
+impl UserPreferences {
+    /// The open enums decode an unlisted value so a read never fails, but the
+    /// `PATCH` schema pins each to its published list: one read back as
+    /// `Unknown` must not be written.
+    pub(crate) fn validate(&self) -> Result<(), Error> {
+        for (what, unlisted) in [
+            (
+                "user preference sceneOrder",
+                self.scene_order
+                    .as_ref()
+                    .filter(|v| v.wire_name().is_none())
+                    .map(|v| v.as_str()),
+            ),
+            (
+                "user preference initialRedirect",
+                self.initial_redirect
+                    .as_ref()
+                    .filter(|v| v.wire_name().is_none())
+                    .map(|v| v.as_str()),
+            ),
+            (
+                "user preference theme",
+                self.theme
+                    .as_ref()
+                    .filter(|v| v.wire_name().is_none())
+                    .map(|v| v.as_str()),
+            ),
+            (
+                "user preference locale",
+                self.locale
+                    .as_ref()
+                    .filter(|v| v.wire_name().is_none())
+                    .map(|v| v.as_str()),
+            ),
+        ] {
+            if let Some(value) = unlisted {
+                return Err(Error::invalid(
+                    what,
+                    format!("{value:?} is not a published value"),
+                ));
+            }
+        }
+        Ok(())
+    }
+}
+
 /// AI feature usage, keyed by an opaque window identifier.
 #[derive(Clone, Debug, Default, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
@@ -192,6 +238,9 @@ impl UserPatch {
                 "user role",
                 format!("must be member or admin, got {role}"),
             ));
+        }
+        if let Some(preferences) = &self.preferences {
+            preferences.validate()?;
         }
         Ok(())
     }
