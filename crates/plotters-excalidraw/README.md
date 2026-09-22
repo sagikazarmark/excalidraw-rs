@@ -7,17 +7,16 @@
 
 ## Install
 
-Requires Rust **1.97+**. To use a local checkout, adjust the path:
+Requires Rust **1.97+**.
 
 ```toml
 [dependencies]
-plotters-excalidraw = { path = "../excaliplot.orig/crates/plotters-excalidraw", version = "0.1.0" }
+plotters-excalidraw = "0.2"
 plotters = { version = "=0.3.7", default-features = false, features = ["line_series"] }
 ```
 
 The library itself depends only on `plotters-backend`, not the full Plotters crate
-or Chrono. See the [release guide](https://github.com/sagikazarmark/excaliplot.orig/blob/main/docs/releasing.md)
-for distribution status and publication steps.
+or Chrono.
 
 ## Quick Start
 
