@@ -1,7 +1,7 @@
 # excalidraw-api
 
 **Typed client for the public [Excalidraw Plus REST API](https://plus.excalidraw.com/docs/api), built on
-[`excalidraw-document`](../excalidraw-document/README.md).**
+[`excalidraw-document`](https://docs.rs/excalidraw-document).**
 
 All 27 documented operations. Scene payloads are `excalidraw_document::plus`
 types, unchanged, so a download and an upload are the same preserving document
@@ -129,7 +129,7 @@ API key.
 
 Licensed under either of
 
-- Apache License, Version 2.0 ([LICENSE-APACHE](../../LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
-- MIT license ([LICENSE-MIT](../../LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
+- Apache License, Version 2.0 ([LICENSE-APACHE](LICENSE-APACHE) or <http://www.apache.org/licenses/LICENSE-2.0>)
+- MIT license ([LICENSE-MIT](LICENSE-MIT) or <http://opensource.org/licenses/MIT>)
 
 at your option.
