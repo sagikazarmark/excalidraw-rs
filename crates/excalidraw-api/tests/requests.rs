@@ -471,6 +471,31 @@ fn empty_identifiers_are_refused_before_a_request_exists() {
 }
 
 #[test]
+fn dot_segment_identifiers_are_refused_because_url_parsing_resolves_them() {
+    // `/workspaces/users/..` resolves to `/workspaces/`, and percent-encoding
+    // cannot help: URL parsing treats `%2E%2E` as `..` too.
+    for dots in [".", ".."] {
+        assert!(SceneId::new(dots).is_err(), "{dots}");
+        assert!(CollectionId::new(dots).is_err(), "{dots}");
+        assert!(UserId::new(dots).is_err(), "{dots}");
+        assert!(InviteId::new(dots).is_err(), "{dots}");
+        assert!(
+            serde_json::from_value::<UserId>(json!(dots)).is_err(),
+            "{dots}"
+        );
+    }
+    // Only a whole segment of dots resolves; anything longer is an ordinary id.
+    for id in ["...", ".a", "a.."] {
+        assert!(SceneId::new(id).is_ok(), "{id}");
+    }
+    assert_eq!(
+        serde_json::from_value::<SceneId>(json!("scene-1")).unwrap(),
+        scene()
+    );
+    assert_eq!(serde_json::to_value(scene()).unwrap(), json!("scene-1"));
+}
+
+#[test]
 fn pagination_bounds_are_checked_locally() {
     for bad in [PageRequest::new().limit(0), PageRequest::new().limit(101)] {
         let refused = op::ListScenes {

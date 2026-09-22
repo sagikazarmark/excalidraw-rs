@@ -7,16 +7,25 @@ macro_rules! opaque_id {
     ($name:ident, $what:literal) => {
         #[doc = concat!("An opaque ", $what, " identifier.")]
         #[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd, Serialize, Deserialize)]
-        #[serde(transparent)]
+        #[serde(try_from = "String", into = "String")]
         pub struct $name(String);
 
         impl $name {
-            /// Rejects only the empty string. Everything else is percent-encoded
-            /// when it reaches a path, so no format check is imposed.
+            /// Rejects the empty string and the dot segments `.` and `..`.
+            /// Everything else is percent-encoded when it reaches a path, so no
+            /// format check is imposed. The dot segments cannot be encoded
+            /// away: URL parsing resolves `%2E%2E` exactly like `..`, so an id
+            /// of `..` would lift its request out of its route.
             pub fn new(id: impl Into<String>) -> Result<Self, Error> {
                 let id = id.into();
                 if id.is_empty() {
                     return Err(Error::invalid(concat!($what, " id"), "must not be empty"));
+                }
+                if id == "." || id == ".." {
+                    return Err(Error::invalid(
+                        concat!($what, " id"),
+                        format!("must not be the dot segment {id:?}"),
+                    ));
                 }
                 Ok(Self(id))
             }
@@ -38,6 +47,20 @@ macro_rules! opaque_id {
             type Err = Error;
             fn from_str(s: &str) -> Result<Self, Error> {
                 Self::new(s)
+            }
+        }
+
+        // Decoding goes through `new`, so no value of this type skips its check.
+        impl TryFrom<String> for $name {
+            type Error = Error;
+            fn try_from(id: String) -> Result<Self, Error> {
+                Self::new(id)
+            }
+        }
+
+        impl From<$name> for String {
+            fn from(id: $name) -> String {
+                id.0
             }
         }
     };
