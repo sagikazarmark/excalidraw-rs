@@ -105,7 +105,10 @@ transport profile and projects with zero changes.
   `sceneVersion` does not change when element geometry does, so another writer can
   move a whole scene while the check still passes.
 - **No automatic retries** unless you enable `retry` and pass a policy. `POST` is
-  never retried: the API publishes no idempotency key. Nor is a full content
+  never retried: the API publishes no idempotency key. Nor is `PATCH`: `appState`
+  shallow-merges, so a replay can overwrite a collaborator's change to the same
+  key, and a content patch with provisional element ids inserts those elements
+  again on every submission. Nor is a full content
   replacement (`PUT /scenes/{id}/content`): a replay after an ambiguous `5xx` is a
   second authoritative write that bumps `contentEpoch`, reloads connected editors,
   and can erase a collaborator's edit made during the backoff.

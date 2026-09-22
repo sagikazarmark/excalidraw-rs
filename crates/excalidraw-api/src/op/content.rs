@@ -93,6 +93,10 @@ impl Operation for ReplaceSceneContent {
 ///
 /// The tie-break direction and equal-version equal-nonce behaviour are not
 /// published, and this crate implements no local reconciliation.
+///
+/// Never retried, like every `PATCH` (see [`crate::Method::is_idempotent`]):
+/// a replay after an ambiguous `5xx` re-inserts elements whose provisional ids
+/// the server rewrote the first time.
 #[derive(Clone, Debug, PartialEq)]
 pub struct PatchSceneContent {
     pub scene: SceneId,

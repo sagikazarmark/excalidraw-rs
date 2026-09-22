@@ -27,7 +27,7 @@ use excalidraw_api::{
     ApiKey, ClientConfig, PageRequest, SceneId,
     blocking::Client,
     model::NewCollection,
-    op::{CreateCollection, ListCollections, ReplaceSceneContent},
+    op::{CreateCollection, ListCollections, PatchSceneContent, ReplaceSceneContent},
 };
 
 mod common;
@@ -448,6 +448,34 @@ mod retry {
 
         let seen = handle.join().expect("origin thread");
         assert_eq!(seen.len(), 1, "a replay is a new authoritative write");
+    }
+
+    #[test]
+    fn a_content_patch_is_never_retried() {
+        // The first attempt may have landed behind the 503. A replay would insert
+        // provisional-id elements a second time, and re-apply an `appState`
+        // shallow merge over whatever a collaborator set during the backoff.
+        let unavailable = r#"{"statusCode":503,"error":"Service Unavailable","message":"down"}"#;
+        let (base, handle) = origin(vec![
+            (503, vec![JSON], unavailable),
+            (503, vec![JSON], unavailable),
+        ]);
+
+        client(&base)
+            .send_retrying(
+                PatchSceneContent {
+                    scene: SceneId::new("scene-1").unwrap(),
+                    body: excalidraw_api::plus::PatchSceneContent::from_value(serde_json::json!({
+                        "appState": {"viewBackgroundColor": "#000000"}
+                    }))
+                    .unwrap(),
+                },
+                immediate(3),
+            )
+            .expect_err("PATCH content fails without retrying");
+
+        let seen = handle.join().expect("origin thread");
+        assert_eq!(seen.len(), 1, "PATCH is not idempotent here");
     }
 
     #[test]

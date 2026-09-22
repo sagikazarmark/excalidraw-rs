@@ -3,8 +3,9 @@
 //! Retries only `429` and `5xx`, and only for operations that are
 //! [`Operation::replayable`]: by default, those with an idempotent method. `POST`
 //! is never retried automatically: the API publishes no idempotency key, so a
-//! retried create could duplicate a resource. Nor is a full scene content
-//! replacement, whose every replay is a new authoritative write.
+//! retried create could duplicate a resource. Nor is `PATCH`, whose merges are
+//! not idempotent here, nor a full scene content replacement, whose every
+//! replay is a new authoritative write.
 use crate::{Error, Operation};
 use std::time::Duration;
 

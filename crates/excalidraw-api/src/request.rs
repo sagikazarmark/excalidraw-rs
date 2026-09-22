@@ -62,13 +62,20 @@ impl Method {
             Self::Delete => "DELETE",
         }
     }
-    /// True when repeating the request has the same effect as sending it once.
-    /// `POST` is excluded: the API publishes no idempotency key.
+    /// True for the methods RFC 9110 defines as idempotent: `GET`, `PUT` and
+    /// `DELETE`.
+    ///
+    /// `POST` is excluded because the API publishes no idempotency key. `PATCH`
+    /// is excluded because RFC 9110 makes no idempotency promise for it, and
+    /// this API's merges bear that out: `appState` shallow-merges, so a replay
+    /// can overwrite a collaborator's intervening change to the same key, and
+    /// a content patch carrying provisional element ids inserts those elements
+    /// again on every submission.
     ///
     /// This is the method's default; an operation can still refuse replay
     /// through [`Operation::replayable`].
     pub fn is_idempotent(self) -> bool {
-        !matches!(self, Self::Post)
+        !matches!(self, Self::Post | Self::Patch)
     }
 }
 
