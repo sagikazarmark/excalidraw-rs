@@ -98,6 +98,15 @@ impl RetryPolicy {
     }
 }
 
+/// Whether `op` may be replayed, asked only once an attempt has failed.
+///
+/// Answering it builds the request, which for a scene means serialising its
+/// whole body; a first attempt that succeeds should not pay for that twice.
+/// A request that cannot be built is not replayable.
+fn replayable<O: Operation>(op: &O, known: &mut Option<bool>) -> bool {
+    *known.get_or_insert_with(|| op.request().is_ok_and(|request| op.replayable(&request)))
+}
+
 fn now_unix() -> Option<u64> {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -107,25 +116,28 @@ fn now_unix() -> Option<u64> {
 
 impl crate::Client {
     /// Send with bounded retries. See [`RetryPolicy`] for what is retried.
-    pub async fn send_retrying<O: Operation + Clone>(
+    pub async fn send_retrying<O: Operation>(
         &self,
         op: O,
         policy: RetryPolicy,
     ) -> Result<O::Output, Error> {
-        let replayable = op.replayable(&op.request()?);
+        let mut known = None;
         let mut attempt = 0;
         loop {
-            match self.send(op.clone()).await {
+            match self.send_ref(&op).await {
                 Ok(output) => return Ok(output),
-                Err(error) => match policy.delay_for(&error, replayable, attempt, now_unix()) {
-                    Some(delay) => {
-                        // Never block the executor: the async client sleeps on
-                        // the timer, not the thread.
-                        tokio::time::sleep(delay).await;
-                        attempt += 1;
+                Err(error) => {
+                    match policy.delay_for(&error, replayable(&op, &mut known), attempt, now_unix())
+                    {
+                        Some(delay) => {
+                            // Never block the executor: the async client sleeps on
+                            // the timer, not the thread.
+                            tokio::time::sleep(delay).await;
+                            attempt += 1;
+                        }
+                        None => return Err(error),
                     }
-                    None => return Err(error),
-                },
+                }
             }
         }
     }
@@ -134,23 +146,26 @@ impl crate::Client {
 #[cfg(feature = "blocking")]
 impl crate::blocking::Client {
     /// Send with bounded retries. See [`RetryPolicy`] for what is retried.
-    pub fn send_retrying<O: Operation + Clone>(
+    pub fn send_retrying<O: Operation>(
         &self,
         op: O,
         policy: RetryPolicy,
     ) -> Result<O::Output, Error> {
-        let replayable = op.replayable(&op.request()?);
+        let mut known = None;
         let mut attempt = 0;
         loop {
-            match self.send(op.clone()) {
+            match self.send_ref(&op) {
                 Ok(output) => return Ok(output),
-                Err(error) => match policy.delay_for(&error, replayable, attempt, now_unix()) {
-                    Some(delay) => {
-                        std::thread::sleep(delay);
-                        attempt += 1;
+                Err(error) => {
+                    match policy.delay_for(&error, replayable(&op, &mut known), attempt, now_unix())
+                    {
+                        Some(delay) => {
+                            std::thread::sleep(delay);
+                            attempt += 1;
+                        }
+                        None => return Err(error),
                     }
-                    None => return Err(error),
-                },
+                }
             }
         }
     }

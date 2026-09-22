@@ -398,6 +398,51 @@ mod retry {
         );
     }
 
+    /// Counts how often its request is built. Deliberately not `Clone`: the
+    /// retry loop resends by reference rather than copying the operation.
+    struct Counted {
+        inner: ListCollections,
+        builds: std::rc::Rc<std::cell::Cell<usize>>,
+    }
+
+    impl excalidraw_api::Operation for Counted {
+        type Output = <ListCollections as excalidraw_api::Operation>::Output;
+        fn request(&self) -> Result<excalidraw_api::Request, excalidraw_api::Error> {
+            self.builds.set(self.builds.get() + 1);
+            excalidraw_api::Operation::request(&self.inner)
+        }
+        fn decode(
+            &self,
+            status: u16,
+            headers: &dyn excalidraw_api::HeaderLookup,
+            body: &[u8],
+        ) -> Result<Self::Output, excalidraw_api::Error> {
+            self.inner.decode(status, headers, body)
+        }
+    }
+
+    #[test]
+    fn a_first_attempt_that_succeeds_builds_its_request_once() {
+        // Replayability is asked only after a failure: a scene body is
+        // serialised to build its request, and a success should not pay twice.
+        let listing = r#"{"limit":10,"offset":0,"hasNextPage":false,"data":[]}"#;
+        let (base, handle) = origin(vec![(200, vec![JSON], listing)]);
+        let builds = std::rc::Rc::new(std::cell::Cell::new(0));
+        let op = Counted {
+            inner: ListCollections {
+                page: PageRequest::new(),
+            },
+            builds: builds.clone(),
+        };
+
+        let client = client(&base);
+        let sent = client.send_retrying(op, immediate(3));
+        sent.expect("first attempt succeeds");
+
+        handle.join().expect("origin thread");
+        assert_eq!(builds.get(), 1);
+    }
+
     #[test]
     fn a_retried_get_succeeds_on_a_later_attempt_without_replaying_the_success() {
         let unavailable = r#"{"statusCode":503,"error":"Service Unavailable","message":"down"}"#;

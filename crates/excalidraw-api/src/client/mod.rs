@@ -157,6 +157,12 @@ impl Client {
     }
 
     pub async fn send<O: Operation>(&self, op: O) -> Result<O::Output, Error> {
+        self.send_ref(&op).await
+    }
+
+    /// `send` by reference, so a retry loop can resend one operation without
+    /// cloning it: a scene body may be several megabytes.
+    pub(crate) async fn send_ref<O: Operation>(&self, op: &O) -> Result<O::Output, Error> {
         let mut request = op.request()?;
         let mut http = self
             .http

@@ -45,6 +45,11 @@ impl Client {
     }
 
     pub fn send<O: Operation>(&self, op: O) -> Result<O::Output, Error> {
+        self.send_ref(&op)
+    }
+
+    /// `send` by reference; see the async client.
+    pub(crate) fn send_ref<O: Operation>(&self, op: &O) -> Result<O::Output, Error> {
         let mut request = op.request()?;
         let mut http = self
             .http
