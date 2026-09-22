@@ -373,6 +373,55 @@ fn preferences_read_as_unknown_cannot_be_written_back() {
 // ------------------------------------------------------------- invites and logs
 
 #[test]
+fn an_invite_email_must_match_the_published_pattern() {
+    // Expected values come from running the fixture's own pattern through a
+    // JavaScript `RegExp`, the dialect the artifact publishes it in.
+    for (email, published) in [
+        ("a@example.com", true),
+        ("first.last@example.co.uk", true),
+        ("o'brien@example.com", true),
+        ("x+tag@sub.example.io", true),
+        ("a_b-c@a-b.example.com", true),
+        ("A1@B2.CD", true),
+        ("", false),
+        (".a@example.com", false),
+        ("a.@example.com", false),
+        ("a..b@example.com", false),
+        ("a@example..com", false),
+        ("a'@example.com", false),
+        ("a@-example.com", false),
+        ("a@example.c", false),
+        ("a@example.c0m", false),
+        ("a@example", false),
+        ("a@@example.com", false),
+        ("a@b@example.com", false),
+        ("@example.com", false),
+        ("a@.example.com", false),
+        ("a b@example.com", false),
+        ("a@exa_mple.com", false),
+        ("a@example.com.", false),
+        ("\u{e9}@example.com", false),
+        ("a@example.co-m", false),
+        ("a-@example.com", true),
+        ("'a@example.com", true),
+        ("a.b.c@x.y.zz", true),
+        ("a@1.example.com", true),
+        ("not-an-email", false),
+        ("a@example.COM", true),
+        ("a@ex-ample-.com", true),
+    ] {
+        let request = op::CreateInvite {
+            invite: model::NewInvite::email(model::Role::Member, email),
+        }
+        .request();
+        assert_eq!(request.is_ok(), published, "{email:?}: {request:?}");
+        if !published {
+            assert!(matches!(request, Err(Error::Invalid { what, .. }) if what == "invite email"));
+        }
+    }
+}
+
+#[test]
 fn invite_requests() {
     check(
         op::ListInvites::default(),

@@ -166,9 +166,10 @@ impl NewInvite {
             ));
         }
         match self {
-            Self::Email { email, .. } if email.is_empty() => {
-                Err(Error::invalid("invite email", "must not be empty"))
-            }
+            Self::Email { email, .. } if !published_email(email) => Err(Error::invalid(
+                "invite email",
+                format!("{email:?} does not match the published email pattern"),
+            )),
             Self::Link(LinkInvite {
                 max_uses: Some(max_uses),
                 ..
@@ -176,6 +177,44 @@ impl NewInvite {
             _ => Ok(()),
         }
     }
+}
+
+/// The `email` pattern the create-invite schema publishes, matched by hand
+/// rather than through a regex engine:
+///
+/// `^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$`
+///
+/// Neither part may contain `@` or `..`, so the split at the first `@` and at
+/// the domain's last `.` is the only one the pattern can match. It is ASCII
+/// only, as published. Only the create body pins it; `PATCH` takes any string.
+fn published_email(email: &str) -> bool {
+    if email.starts_with('.') || email.contains("..") {
+        return false;
+    }
+    let Some((local, domain)) = email.split_once('@') else {
+        return false;
+    };
+    let local_ok = local
+        .bytes()
+        .last()
+        .is_some_and(|c| c.is_ascii_alphanumeric() || b"_+-".contains(&c))
+        && local
+            .bytes()
+            .all(|c| c.is_ascii_alphanumeric() || b"_'+-.".contains(&c));
+    let Some((labels, tld)) = domain.rsplit_once('.') else {
+        return false;
+    };
+    let tld_ok = tld.len() >= 2 && tld.bytes().all(|c| c.is_ascii_alphabetic());
+    let labels_ok = labels.split('.').all(|label| {
+        label
+            .bytes()
+            .next()
+            .is_some_and(|c| c.is_ascii_alphanumeric())
+            && label
+                .bytes()
+                .all(|c| c.is_ascii_alphanumeric() || c == b'-')
+    });
+    local_ok && tld_ok && labels_ok
 }
 
 impl Serialize for NewInvite {
