@@ -10,22 +10,21 @@ use serde::{Deserialize, Deserializer, de};
 pub const MAX_SAFE_INTEGER: u64 = 9_007_199_254_740_991;
 
 fn to_count(number: &serde_json::Number) -> Result<u64, String> {
-    if let Some(value) = number.as_u64() {
-        if value <= MAX_SAFE_INTEGER {
-            return Ok(value);
+    // Judged on the exact decimal text (`arbitrary_precision` keeps it), never
+    // through `f64`: rounding first would turn `9007199254740990.5` or
+    // `0.99999999999999999999` into an integer this helper promises to refuse.
+    match excalidraw_document::Number(number.clone()).as_safe_integer() {
+        Ok(value) if value >= 0 => Ok(value as u64),
+        _ if number
+            .as_u64()
+            .is_some_and(|value| value > MAX_SAFE_INTEGER) =>
+        {
+            Err(format!("{number} exceeds the published maximum"))
         }
-        return Err(format!("{number} exceeds the published maximum"));
+        _ => Err(format!(
+            "expected a nonnegative integral count, got {number}"
+        )),
     }
-    if let Some(value) = number.as_f64()
-        && value >= 0.0
-        && value.fract() == 0.0
-        && value <= MAX_SAFE_INTEGER as f64
-    {
-        return Ok(value as u64);
-    }
-    Err(format!(
-        "expected a nonnegative integral count, got {number}"
-    ))
 }
 
 pub fn count<'de, D: Deserializer<'de>>(deserializer: D) -> Result<u64, D::Error> {
@@ -117,3 +116,43 @@ macro_rules! open_string_enum {
 }
 
 pub(crate) use open_string_enum;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn parse(text: &str) -> Result<u64, String> {
+        to_count(&serde_json::from_str(text).unwrap())
+    }
+
+    #[test]
+    fn counts_are_judged_on_the_exact_decimal_rather_than_a_rounded_f64() {
+        for text in [
+            "9007199254740990.5",
+            "0.99999999999999999999",
+            "1.0000000000000000001",
+            "9007199254740991.4",
+            "0.5",
+            "-1",
+            "9007199254740992",
+            "1e16",
+        ] {
+            assert!(parse(text).is_err(), "{text} was accepted");
+        }
+        for (text, value) in [
+            ("0", 0),
+            ("-0", 0),
+            ("5", 5),
+            ("5.0", 5),
+            ("1e3", 1000),
+            ("9007199254740991", MAX_SAFE_INTEGER),
+        ] {
+            assert_eq!(parse(text), Ok(value), "{text}");
+        }
+        assert!(
+            parse("9007199254740992")
+                .unwrap_err()
+                .contains("published maximum")
+        );
+    }
+}
