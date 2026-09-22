@@ -59,8 +59,12 @@ impl<T> Page<T> {
     ///
     /// Offset pagination over a mutating collection can repeat or skip items:
     /// consecutive pages are not a snapshot.
+    ///
+    /// An empty page ends the walk even when it reports `hasNextPage`: its
+    /// following offset is its own, so requesting it would fetch the same page
+    /// again, and a loop that followed it would never make progress.
     pub fn next_request(&self) -> Option<PageRequest> {
-        if !self.has_next_page {
+        if !self.has_next_page || self.data.is_empty() {
             return None;
         }
         Some(PageRequest {
@@ -169,6 +173,25 @@ impl LogQuery {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn page(data: Vec<u8>, has_next_page: bool) -> Page<u8> {
+        Page {
+            limit: 10,
+            offset: 20,
+            has_next_page,
+            data,
+        }
+    }
+
+    #[test]
+    fn an_empty_page_is_never_followed_even_when_it_reports_a_next() {
+        assert_eq!(page(vec![], true).next_request(), None);
+        assert_eq!(
+            page(vec![1, 2], true).next_request(),
+            Some(PageRequest::new().limit(10).offset(22))
+        );
+        assert_eq!(page(vec![1, 2], false).next_request(), None);
+    }
 
     #[test]
     fn a_spent_budget_opens_no_walk() {

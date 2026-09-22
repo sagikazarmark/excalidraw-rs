@@ -259,6 +259,40 @@ async fn collect_with_a_zero_budget_sends_nothing() {
 }
 
 #[tokio::test]
+async fn collect_stops_on_an_empty_page_that_still_reports_a_next() {
+    // The page after an empty one is at the same offset: following it would
+    // request that page forever, since nothing ever counts toward the budget.
+    let (base, handle) = origin(vec![
+        (
+            200,
+            vec![JSON],
+            Box::leak(page(&[], true, 0).into_boxed_str()),
+        ),
+        (
+            200,
+            vec![JSON],
+            Box::leak(page(&[], true, 0).into_boxed_str()),
+        ),
+    ]);
+
+    let collected = client(&base)
+        .collect(
+            |page| ListCollections { page },
+            PageRequest::new().limit(1),
+            100,
+        )
+        .await
+        .expect("collect");
+
+    assert!(collected.is_empty());
+    assert_eq!(
+        handle.join().expect("origin thread").len(),
+        1,
+        "an empty page cannot advance the offset"
+    );
+}
+
+#[tokio::test]
 async fn collect_walks_every_page_until_the_server_reports_no_next() {
     let (base, handle) = origin(vec![
         (
