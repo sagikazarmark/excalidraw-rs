@@ -47,6 +47,24 @@ impl<'de> Deserialize<'de> for MaxUses {
     }
 }
 
+impl MaxUses {
+    /// The request bodies publish `exclusiveMinimum: 0` and a `maximum` of
+    /// [`de::MAX_SAFE_INTEGER`]. Decoding a response stays lenient; sending one
+    /// the schema refuses is the caller's mistake, reported before any I/O.
+    pub(crate) fn validate(&self) -> Result<(), Error> {
+        match *self {
+            Self::Limited(uses) if uses == 0 || uses > de::MAX_SAFE_INTEGER => Err(Error::invalid(
+                "invite max uses",
+                format!(
+                    "must be 1..={} or unlimited, got {uses}",
+                    de::MAX_SAFE_INTEGER
+                ),
+            )),
+            _ => Ok(()),
+        }
+    }
+}
+
 impl Serialize for MaxUses {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
         match self {
@@ -136,12 +154,16 @@ impl NewInvite {
                 format!("must be member or admin, got {}", self.role()),
             ));
         }
-        if let Self::Email { email, .. } = self
-            && email.is_empty()
-        {
-            return Err(Error::invalid("invite email", "must not be empty"));
+        match self {
+            Self::Email { email, .. } if email.is_empty() => {
+                Err(Error::invalid("invite email", "must not be empty"))
+            }
+            Self::Link {
+                max_uses: Some(max_uses),
+                ..
+            } => max_uses.validate(),
+            _ => Ok(()),
         }
-        Ok(())
     }
 }
 
@@ -238,6 +260,9 @@ impl InvitePatch {
                 "invite role",
                 format!("must be member or admin, got {role}"),
             ));
+        }
+        if let Some(max_uses) = &self.max_uses {
+            max_uses.validate()?;
         }
         Ok(())
     }

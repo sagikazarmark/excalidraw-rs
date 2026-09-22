@@ -351,6 +351,27 @@ fn invite_requests() {
         "the link arm never carries an email key"
     );
 
+    for uses in [0, 9_007_199_254_740_992] {
+        let refused = op::CreateInvite {
+            invite: model::NewInvite::link(model::Role::Member)
+                .max_uses(model::MaxUses::Limited(uses)),
+        }
+        .request();
+        assert!(
+            matches!(refused, Err(Error::Invalid { what, .. }) if what == "invite max uses"),
+            "create sent maxUses {uses}"
+        );
+        let refused = op::UpdateInvite {
+            invite: InviteId::new("i-1").unwrap(),
+            patch: model::InvitePatch::new().max_uses(model::MaxUses::Limited(uses)),
+        }
+        .request();
+        assert!(
+            matches!(refused, Err(Error::Invalid { what, .. }) if what == "invite max uses"),
+            "update sent maxUses {uses}"
+        );
+    }
+
     let sent = check(
         op::UpdateInvite {
             invite: InviteId::new("i-1").unwrap(),
