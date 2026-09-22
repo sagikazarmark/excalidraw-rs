@@ -810,7 +810,13 @@ pub(crate) fn binary_file_record(
 /// uppercase-but-otherwise-recognised token is reported as an unrecognised
 /// MIME type even though it agrees with its own data URL — two different
 /// findings about two different things, not a contradiction.
+///
+/// An empty `mime` never matches: `data:,…` omits its media type (RFC 2397
+/// defaults it to `text/plain`), it does not declare an empty one.
 pub(crate) fn data_url_carries(url: &str, mime: &str) -> bool {
+    if mime.is_empty() {
+        return false;
+    }
     url.strip_prefix("data:")
         .and_then(|s| s.split_once(','))
         .is_some_and(|(header, payload)| {

@@ -112,6 +112,13 @@ fn transport_refuses_a_file_record_contradicting_its_own_mime_type() {
 }
 
 #[test]
+fn transport_refuses_an_empty_mime_type_against_a_data_url_that_omits_its_type() {
+    let record = json!({"id":"f","mimeType":"","dataURL":"data:,AA","created":1,"version":1});
+    assert!(ReplaceSceneContent::new(scene_with_file(record.clone())).is_err());
+    assert!(PatchSceneContent::from_value(json!({"files":{"f":record}})).is_err());
+}
+
+#[test]
 fn transport_agreement_on_the_media_type_is_ascii_case_insensitive() {
     // RFC 2045 §5.1: type/subtype names are case-insensitive. The transport
     // asks the same predicate `Document::validate` does, so it inherits that

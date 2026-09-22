@@ -127,6 +127,29 @@ fn file_records_contradicting_their_own_mime_type_are_always_errors() {
 }
 
 #[test]
+fn an_empty_mime_type_is_not_carried_by_a_data_url_that_omits_its_type() {
+    // `data:,AA` omits its media type; it does not declare an empty one. Were
+    // the two empty tokens to agree, `Author` would pass this record with only
+    // the unsupported-type warning, though `BinaryFile::new` refuses it.
+    let document = Document::from_value(json!({"type":"excalidraw","elements":[],"appState":{},
+        "files":{"f":{"id":"f","mimeType":"","dataURL":"data:,AA","created":1,"version":1}}}))
+    .unwrap();
+    for purpose in [Purpose::Inspect, Purpose::Author, Purpose::SelfContained] {
+        let report = document.validate(Profile::V0_18_1, purpose);
+        assert!(
+            report
+                .diagnostics
+                .iter()
+                .any(|d| d.path == "/files/f/dataURL"
+                    && d.code == "data-url"
+                    && d.severity == Severity::Error),
+            "{purpose:?}: {report:?}"
+        );
+        assert!(!report.is_valid(), "{purpose:?}");
+    }
+}
+
+#[test]
 fn unknown_file_mime_types_are_condemned_only_when_self_contained() {
     let document = Document::from_value(json!({"type":"excalidraw","version":2,"source":"test","elements":[],"appState":{},
         "files":{"f":{"id":"f","mimeType":"image/future","dataURL":"data:image/future,x","created":1,"version":1}}}))
