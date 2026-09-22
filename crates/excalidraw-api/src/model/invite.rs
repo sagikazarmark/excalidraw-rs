@@ -106,11 +106,36 @@ pub enum NewInvite {
     /// An invitation addressed to one email.
     Email { role: Role, email: String },
     /// A shareable link invitation.
-    Link {
-        role: Role,
-        max_uses: Option<MaxUses>,
-        restricted_domains: Option<Vec<String>>,
-    },
+    Link(LinkInvite),
+}
+
+/// The link arm of [`NewInvite`], and the builder for its link-only settings.
+///
+/// The email arm is closed and carries neither setting, so they live here
+/// rather than on [`NewInvite`]: a setter there would have to ignore the call
+/// on an email invitation, which is a setting silently lost.
+#[derive(Clone, Debug, PartialEq)]
+pub struct LinkInvite {
+    pub role: Role,
+    pub max_uses: Option<MaxUses>,
+    pub restricted_domains: Option<Vec<String>>,
+}
+
+impl LinkInvite {
+    pub fn max_uses(mut self, uses: MaxUses) -> Self {
+        self.max_uses = Some(uses);
+        self
+    }
+    pub fn restricted_domains(mut self, domains: Vec<String>) -> Self {
+        self.restricted_domains = Some(domains);
+        self
+    }
+}
+
+impl From<LinkInvite> for NewInvite {
+    fn from(link: LinkInvite) -> Self {
+        Self::Link(link)
+    }
 }
 
 impl NewInvite {
@@ -120,31 +145,17 @@ impl NewInvite {
             email: email.into(),
         }
     }
-    pub fn link(role: Role) -> Self {
-        Self::Link {
+    /// Start a link invitation; convert the finished builder with `.into()`.
+    pub fn link(role: Role) -> LinkInvite {
+        LinkInvite {
             role,
             max_uses: None,
             restricted_domains: None,
         }
     }
-    pub fn max_uses(mut self, uses: MaxUses) -> Self {
-        if let Self::Link { max_uses, .. } = &mut self {
-            *max_uses = Some(uses);
-        }
-        self
-    }
-    pub fn restricted_domains(mut self, domains: Vec<String>) -> Self {
-        if let Self::Link {
-            restricted_domains, ..
-        } = &mut self
-        {
-            *restricted_domains = Some(domains);
-        }
-        self
-    }
     fn role(&self) -> &Role {
         match self {
-            Self::Email { role, .. } | Self::Link { role, .. } => role,
+            Self::Email { role, .. } | Self::Link(LinkInvite { role, .. }) => role,
         }
     }
     pub(crate) fn validate(&self) -> Result<(), Error> {
@@ -158,10 +169,10 @@ impl NewInvite {
             Self::Email { email, .. } if email.is_empty() => {
                 Err(Error::invalid("invite email", "must not be empty"))
             }
-            Self::Link {
+            Self::Link(LinkInvite {
                 max_uses: Some(max_uses),
                 ..
-            } => max_uses.validate(),
+            }) => max_uses.validate(),
             _ => Ok(()),
         }
     }
@@ -177,11 +188,11 @@ impl Serialize for NewInvite {
                 map.serialize_entry("email", email)?;
                 map.end()
             }
-            Self::Link {
+            Self::Link(LinkInvite {
                 role,
                 max_uses,
                 restricted_domains,
-            } => {
+            }) => {
                 let len = 1 + max_uses.is_some() as usize + restricted_domains.is_some() as usize;
                 let mut map = serializer.serialize_map(Some(len))?;
                 map.serialize_entry("role", role)?;

@@ -335,7 +335,8 @@ fn invite_requests() {
         op::CreateInvite {
             invite: model::NewInvite::link(model::Role::Admin)
                 .max_uses(model::MaxUses::Unlimited)
-                .restricted_domains(vec!["example.com".into()]),
+                .restricted_domains(vec!["example.com".into()])
+                .into(),
         },
         Method::Post,
         "/workspaces/invites",
@@ -354,7 +355,8 @@ fn invite_requests() {
     for uses in [0, 9_007_199_254_740_992] {
         let refused = op::CreateInvite {
             invite: model::NewInvite::link(model::Role::Member)
-                .max_uses(model::MaxUses::Limited(uses)),
+                .max_uses(model::MaxUses::Limited(uses))
+                .into(),
         }
         .request();
         assert!(

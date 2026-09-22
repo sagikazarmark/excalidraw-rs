@@ -19,7 +19,7 @@ mod user;
 mod workspace;
 
 pub use collection::{Collection, CollectionPatch, Emoji, NewCollection};
-pub use invite::{Invite, InvitePatch, InviteStatus, InviteType, MaxUses, NewInvite};
+pub use invite::{Invite, InvitePatch, InviteStatus, InviteType, LinkInvite, MaxUses, NewInvite};
 pub use log::{AppSource, LogEntry, LogPage, SourceType};
 pub use scene::{
     LinkSharing, NewScene, ReadOnlyLink, ReadOnlyLinkData, SceneMetadata, ScenePatch, SceneRecord,
