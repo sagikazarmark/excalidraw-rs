@@ -135,6 +135,7 @@ fn pruning_reports_every_dropped_key() {
             prune_app_state: true,
             default_view_background: None,
             source: None,
+            materialize_files: false,
         },
     )
     .expect("pruning makes it legal");
@@ -179,6 +180,33 @@ fn a_generated_document_needs_no_changes() {
         scene_content::replacement_from_document(&document, &PlusProjection::strict())
             .expect("already a legal Plus body");
     assert!(changes.is_empty(), "a chart upload changes nothing");
+}
+
+#[test]
+fn a_missing_files_map_is_refused_strictly_and_reported_when_supplied() {
+    let document = Document::from_value(json!({
+        "type": "excalidraw",
+        "version": 2,
+        "source": "test",
+        "elements": [],
+        "appState": { "viewBackgroundColor": "#ffffff" }
+    }))
+    .unwrap();
+
+    match scene_content::replacement_from_document(&document, &PlusProjection::strict()) {
+        Err(Error::Content(error)) => assert_eq!(error.path, "/files"),
+        other => panic!("strict changes nothing, so it must refuse; got {other:?}"),
+    }
+
+    let (body, changes) =
+        scene_content::replacement_from_document(&document, &PlusProjection::lenient())
+            .expect("lenient supplies the map");
+    assert_eq!(
+        changes.iter().map(|c| c.path.as_str()).collect::<Vec<_>>(),
+        ["/files"]
+    );
+    let sent: Value = serde_json::from_slice(&body.to_vec().unwrap()).unwrap();
+    assert_eq!(sent["files"], json!({}));
 }
 
 #[test]

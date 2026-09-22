@@ -50,6 +50,10 @@ pub struct PlusProjection {
     pub default_view_background: Option<String>,
     /// Replace the document's `source`. `None` preserves it.
     pub source: Option<String>,
+    /// Supply an empty `files` map when the document has none. The transport
+    /// requires the key; an absent map and an empty one mean the same to
+    /// Excalidraw, but supplying it is still a change.
+    pub materialize_files: bool,
 }
 
 impl PlusProjection {
@@ -60,15 +64,18 @@ impl PlusProjection {
             prune_app_state: false,
             default_view_background: None,
             source: None,
+            materialize_files: false,
         }
     }
-    /// Prune undocumented `appState` keys and supply a white background when the
-    /// document has none. Every change is still reported.
+    /// Prune undocumented `appState` keys, and supply a white background and an
+    /// empty `files` map when the document has none. Every change is still
+    /// reported.
     pub fn lenient() -> Self {
         Self {
             prune_app_state: true,
             default_view_background: Some("#ffffff".to_owned()),
             source: None,
+            materialize_files: true,
         }
     }
 }
@@ -178,7 +185,7 @@ pub fn replacement_from_document(
         }
     }
 
-    if !root.contains_key("files") {
+    if policy.materialize_files && !root.contains_key("files") {
         root.insert("files".to_owned(), Value::Object(Default::default()));
         changes.push(change(
             "/files",
