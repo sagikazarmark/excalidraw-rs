@@ -1,9 +1,11 @@
 //! Opt-in bounded backoff.
 //!
-//! Retries only `429` and `5xx`, and only for idempotent methods. `POST` is never
-//! retried automatically: the API publishes no idempotency key, so a retried
-//! create could duplicate a resource.
-use crate::{Error, Method, Operation};
+//! Retries only `429` and `5xx`, and only for operations that are
+//! [`Operation::replayable`]: by default, those with an idempotent method. `POST`
+//! is never retried automatically: the API publishes no idempotency key, so a
+//! retried create could duplicate a resource. Nor is a full scene content
+//! replacement, whose every replay is a new authoritative write.
+use crate::{Error, Operation};
 use std::time::Duration;
 
 /// Exponential backoff with a ceiling.
@@ -75,11 +77,11 @@ impl RetryPolicy {
     pub fn delay_for(
         &self,
         error: &Error,
-        method: Method,
+        replayable: bool,
         attempt: u32,
         now_unix: Option<u64>,
     ) -> Option<Duration> {
-        if attempt >= self.max_retries || !error.is_retryable() || !method.is_idempotent() {
+        if attempt >= self.max_retries || !error.is_retryable() || !replayable {
             return None;
         }
         let backoff = self.backoff.delay(attempt);
@@ -109,12 +111,12 @@ impl crate::Client {
         op: O,
         policy: RetryPolicy,
     ) -> Result<O::Output, Error> {
-        let method = op.request()?.method;
+        let replayable = op.replayable(&op.request()?);
         let mut attempt = 0;
         loop {
             match self.send(op.clone()).await {
                 Ok(output) => return Ok(output),
-                Err(error) => match policy.delay_for(&error, method, attempt, now_unix()) {
+                Err(error) => match policy.delay_for(&error, replayable, attempt, now_unix()) {
                     Some(delay) => {
                         // Never block the executor: the async client sleeps on
                         // the timer, not the thread.
@@ -136,12 +138,12 @@ impl crate::blocking::Client {
         op: O,
         policy: RetryPolicy,
     ) -> Result<O::Output, Error> {
-        let method = op.request()?.method;
+        let replayable = op.replayable(&op.request()?);
         let mut attempt = 0;
         loop {
             match self.send(op.clone()) {
                 Ok(output) => return Ok(output),
-                Err(error) => match policy.delay_for(&error, method, attempt, now_unix()) {
+                Err(error) => match policy.delay_for(&error, replayable, attempt, now_unix()) {
                     Some(delay) => {
                         std::thread::sleep(delay);
                         attempt += 1;

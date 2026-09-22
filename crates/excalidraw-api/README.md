@@ -33,7 +33,7 @@ identical whichever transport you use.
 | *(default)* | request building and response decoding only |
 | `client` | `reqwest` (async) plus a `ring` cryptography provider |
 | `blocking` | `reqwest`'s blocking client; implies `client` |
-| `retry` | bounded backoff for `429` and `5xx` on idempotent methods |
+| `retry` | bounded backoff for `429` and `5xx` on replayable operations |
 | `client-core` | transport without a provider, for callers who install their own |
 
 `reqwest` is built with `rustls-no-provider`, so `aws-lc-sys` and its cmake build
@@ -105,7 +105,10 @@ transport profile and projects with zero changes.
   `sceneVersion` does not change when element geometry does, so another writer can
   move a whole scene while the check still passes.
 - **No automatic retries** unless you enable `retry` and pass a policy. `POST` is
-  never retried: the API publishes no idempotency key.
+  never retried: the API publishes no idempotency key. Nor is a full content
+  replacement (`PUT /scenes/{id}/content`): a replay after an ambiguous `5xx` is a
+  second authoritative write that bumps `contentEpoch`, reloads connected editors,
+  and can erase a collaborator's edit made during the backoff.
 - **Responses keep unknown fields** in an `extra` map. A field the server *stops*
   sending decodes as `None`, because serde cannot distinguish absent from null
   for an `Option`; catching removals is the drift check's job.

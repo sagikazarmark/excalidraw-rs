@@ -64,6 +64,9 @@ impl Method {
     }
     /// True when repeating the request has the same effect as sending it once.
     /// `POST` is excluded: the API publishes no idempotency key.
+    ///
+    /// This is the method's default; an operation can still refuse replay
+    /// through [`Operation::replayable`].
     pub fn is_idempotent(self) -> bool {
         !matches!(self, Self::Post)
     }
@@ -152,6 +155,17 @@ pub trait Operation {
         headers: &dyn HeaderLookup,
         body: &[u8],
     ) -> Result<Self::Output, Error>;
+
+    /// May the opt-in retry replay `request` after a `429` or `5xx`?
+    ///
+    /// Defaults to [`Method::is_idempotent`]. Override it to `false` when a
+    /// repeat has an effect the first attempt did not, even though the method
+    /// is idempotent in HTTP terms: a `5xx` is ambiguous, and the first attempt
+    /// may already have been applied. [`crate::op::ReplaceSceneContent`] is the
+    /// worked example.
+    fn replayable(&self, request: &Request) -> bool {
+        request.method.is_idempotent()
+    }
 }
 
 /// An operation whose whole response contract is "expect a 2xx, then parse the

@@ -24,10 +24,10 @@
 #![cfg(feature = "blocking")]
 
 use excalidraw_api::{
-    ApiKey, ClientConfig, PageRequest,
+    ApiKey, ClientConfig, PageRequest, SceneId,
     blocking::Client,
     model::NewCollection,
-    op::{CreateCollection, ListCollections},
+    op::{CreateCollection, ListCollections, ReplaceSceneContent},
 };
 
 mod common;
@@ -385,6 +385,36 @@ mod retry {
 
         let seen = handle.join().expect("origin thread");
         assert_eq!(seen.len(), 2, "the walk stops at the first success");
+    }
+
+    #[test]
+    fn a_full_content_replacement_is_never_retried_even_though_put_is_idempotent() {
+        // The first attempt may have landed behind the 503. Replaying it would be
+        // a second authoritative replacement: another `contentEpoch`, another
+        // forced reload, and any collaborator edit made during the backoff lost.
+        let unavailable = r#"{"statusCode":503,"error":"Service Unavailable","message":"down"}"#;
+        let (base, handle) = origin(vec![
+            (503, vec![JSON], unavailable),
+            (503, vec![JSON], unavailable),
+        ]);
+        let document = excalidraw_document::Document::from_value(serde_json::json!({
+            "type": "excalidraw", "version": 2, "source": "test",
+            "elements": [], "appState": {"viewBackgroundColor": "#ffffff"}, "files": {}
+        }))
+        .unwrap();
+
+        client(&base)
+            .send_retrying(
+                ReplaceSceneContent {
+                    scene: SceneId::new("scene-1").unwrap(),
+                    body: excalidraw_api::plus::ReplaceSceneContent::new(document).unwrap(),
+                },
+                immediate(3),
+            )
+            .expect_err("PUT content fails without retrying");
+
+        let seen = handle.join().expect("origin thread");
+        assert_eq!(seen.len(), 1, "a replay is a new authoritative write");
     }
 
     #[test]

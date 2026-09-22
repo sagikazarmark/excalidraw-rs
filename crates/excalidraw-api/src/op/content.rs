@@ -73,6 +73,15 @@ impl Operation for ReplaceSceneContent {
     ) -> Result<Self::Output, Error> {
         decode_content(status, headers, body)
     }
+    /// Never. The same body leaves the same content, but each `PUT` is a new
+    /// authoritative replacement: it advances `contentEpoch` and forces
+    /// connected editors to reload. After an ambiguous `5xx` the first attempt
+    /// may already have landed, and a replay after the backoff would also
+    /// erase whatever a collaborator wrote in between — a concurrent write the
+    /// caller never sees and an epoch check cannot attribute.
+    fn replayable(&self, _: &Request) -> bool {
+        false
+    }
 }
 
 /// `PATCH /scenes/{sceneId}/content` — server-side merge.
