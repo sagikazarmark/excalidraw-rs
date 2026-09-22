@@ -122,6 +122,20 @@ fn counts_typed_as_number_accept_integral_values_only() {
 }
 
 #[test]
+fn content_epoch_is_refused_past_the_published_maximum() {
+    let mut body = scene_record();
+    body["metadata"]["contentEpoch"] = json!(9_007_199_254_740_992u64);
+    let refused = op::GetScene {
+        scene: SceneId::new("s-1").unwrap(),
+    }
+    .decode(200, &NoHeaders, &serde_json::to_vec(&body).unwrap());
+    assert!(
+        matches!(refused, Err(Error::Decode { .. })),
+        "contentEpoch is published as 0..=9007199254740991"
+    );
+}
+
+#[test]
 fn an_unlisted_link_sharing_value_survives() {
     let mut body = scene_record();
     body["metadata"]["linkSharing"] = json!(2);

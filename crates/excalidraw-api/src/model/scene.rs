@@ -28,6 +28,7 @@ pub struct SceneMetadata {
     pub scene_version: SceneVersion,
     /// Published as an integer in `0..=9007199254740991`, default 0. Its meaning
     /// is not documented.
+    #[serde(deserialize_with = "de::count")]
     pub content_epoch: u64,
     pub link_sharing: LinkSharing,
     /// The published pattern excludes `.html`, `.js`, `.php`, `.css` and `.exe`.
