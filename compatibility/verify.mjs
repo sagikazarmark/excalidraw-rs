@@ -87,7 +87,8 @@ try {
   assert.equal(await browser.version(), expectedBrowser, "use the exact configured compatibility browser");
   const editorVersion = JSON.parse(await readFile(path.join(import.meta.dirname,"node_modules/@excalidraw/excalidraw/package.json"),"utf8")).version;
   const report = { browser: await browser.version(), expectedBrowser, focusedSuites, editor: `@excalidraw/excalidraw@${editorVersion}`, tolerance: 1, maxWidthDrift: 0, maxPositionDrift: 0, textEditChecks: 0, fixtures: {} };
-   for (const name of (enabled("typography") ? ["line", "constant", "signed", "typography"] : [])) {
+  const typography = enabled("typography");
+   for (const name of (typography ? ["line", "constant", "signed", "typography"] : [])) {
     const json = await readFile(path.join(process.env.GALLERY_DIR || path.join(import.meta.dirname, "../output/gallery"), `${name}.excalidraw`), "utf8");
     const raw = JSON.parse(json).elements;
     const restored = await page.evaluate(json => window.checks.load(json), json);
@@ -196,6 +197,10 @@ try {
       await page.screenshot({ path: path.join(results, "line.edited.png") });
     }
   }
+  // Every anchor/rotation case and corpus label went through the real editor.
+  // This belongs to typography alone: under GROUPS_ONLY the loop above never
+  // runs, and asserting it there failed every groups-only run.
+  if (typography) assert.equal(report.textEditChecks,46);
   if (enabled("auto_ranges")) report.autoRanges = await verifyAutoRanges(page, results, compareScenes);
   if (enabled("layout")) report.layout = await verifyLayout(page, results, compareScenes);
   if (enabled("log_axes")) report.logAxes = await verifyLogAxes(page, results, compareScenes);
@@ -209,10 +214,7 @@ try {
   if (enabled("bands")) report.bands = await verifyBands(page, results, compareScenes);
   if (enabled("histogram")) report.histogram = await verifyHistogram(page, results, compareScenes);
   if (enabled("steps")) report.steps = await verifySteps(page, results, compareScenes);
-  if (enabled("groups")) {
-    assert.equal(report.textEditChecks,46);
-    report.groups=await verifyGroups(page,results);
-  }
+  if (enabled("groups")) report.groups=await verifyGroups(page,results);
   if (enabled("marks")) {
     report.marks = await verifyMarks(page, results, compareScenes, process.env.MARKS_ONLY === "bars" ? ["bars"] : undefined);
     if (process.env.MARKS_ONLY !== "bars") report.probes = await verifyProbes(page, results, compareScenes);
