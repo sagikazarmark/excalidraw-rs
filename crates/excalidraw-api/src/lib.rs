@@ -4,8 +4,9 @@
 //! The default build performs **no I/O**. [`Operation`] turns each documented
 //! operation into a [`Request`] and decodes a status, headers and body back into
 //! a typed result, so a caller with their own HTTP stack needs no transport from
-//! this crate. Enable `client` for an async [`Client`], or `blocking` for a
-//! synchronous one.
+//! this crate. Enable `client` for an async `Client`, or `blocking` for a
+//! synchronous one. Neither type exists in the default build, so neither is
+//! linked here.
 //!
 //! # Download, convert, upload
 //!
