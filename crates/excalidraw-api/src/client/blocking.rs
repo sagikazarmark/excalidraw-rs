@@ -81,7 +81,7 @@ impl Client {
         F: FnMut(PageRequest) -> O,
     {
         let mut collected = Vec::new();
-        let mut next = Some(start);
+        let mut next = crate::page::first(start, max_items);
         while let Some(request) = next {
             let page = self.send(make(request))?;
             next = crate::page::absorb(page, &mut collected, max_items);

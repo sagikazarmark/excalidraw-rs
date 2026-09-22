@@ -182,7 +182,8 @@ impl Client {
     }
 
     /// Walk an offset-paginated operation until it reports no next page, or
-    /// `max_items` is reached.
+    /// `max_items` is reached. A `max_items` of zero returns an empty result
+    /// without sending a request.
     ///
     /// Offset pagination over a mutating collection can repeat or skip items:
     /// consecutive pages are not a snapshot. `max_items` is required rather than
@@ -198,7 +199,7 @@ impl Client {
         F: FnMut(PageRequest) -> O,
     {
         let mut collected = Vec::new();
-        let mut next = Some(start);
+        let mut next = crate::page::first(start, max_items);
         while let Some(request) = next {
             let page = self.send(make(request)).await?;
             next = crate::page::absorb(page, &mut collected, max_items);

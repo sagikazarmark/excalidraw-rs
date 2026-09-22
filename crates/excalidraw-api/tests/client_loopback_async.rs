@@ -233,6 +233,32 @@ async fn collect_stops_requesting_once_the_budget_is_spent() {
 }
 
 #[tokio::test]
+async fn collect_with_a_zero_budget_sends_nothing() {
+    // A walk that can keep nothing must not spend a request, or rate-limit
+    // budget, on a page it would discard.
+    let (base, handle) = origin(vec![(
+        200,
+        vec![JSON],
+        Box::leak(page(&["a"], true, 0).into_boxed_str()),
+    )]);
+
+    let collected = client(&base)
+        .collect(
+            |page| ListCollections { page },
+            PageRequest::new().limit(1),
+            0,
+        )
+        .await
+        .expect("collect");
+
+    assert!(collected.is_empty());
+    assert!(
+        handle.join().expect("origin thread").is_empty(),
+        "a zero budget must not fetch"
+    );
+}
+
+#[tokio::test]
 async fn collect_walks_every_page_until_the_server_reports_no_next() {
     let (base, handle) = origin(vec![
         (

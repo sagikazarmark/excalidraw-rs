@@ -70,6 +70,15 @@ impl<T> Page<T> {
     }
 }
 
+/// The request that opens a walk, or `None` when `max_items` is already spent.
+///
+/// The zero-budget case of the rule [`absorb`] enforces after every page: a
+/// walk that can keep nothing must not fetch its first page either.
+#[cfg_attr(not(feature = "client-core"), allow(dead_code))]
+pub(crate) fn first(start: PageRequest, max_items: usize) -> Option<PageRequest> {
+    (max_items > 0).then_some(start)
+}
+
 /// Absorb one page into `collected` and report the request that should follow.
 ///
 /// `None` ends the walk: either the server reported no next page, or the
@@ -154,5 +163,17 @@ impl LogQuery {
             ));
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_spent_budget_opens_no_walk() {
+        let start = PageRequest::new().limit(1);
+        assert_eq!(first(start, 0), None);
+        assert_eq!(first(start, 1), Some(start));
     }
 }
