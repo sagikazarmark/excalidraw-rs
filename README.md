@@ -17,6 +17,7 @@ recolor, and annotate them. Generation runs entirely in Rust.
 | [`excaliplot`](crates/excaliplot/README.md) | Ready-made charts with validated data, measured layout, legends, and annotations. |
 | [`plotters-excalidraw`](crates/plotters-excalidraw/README.md) | An Excalidraw backend for ordinary Plotters code, plus scene composition and export. |
 | [`excalidraw-document`](crates/excalidraw-document/README.md) | Preserving, inspecting, editing, validating, and authoring scene/library JSON with typed fields and explicit editor profiles. |
+| [`excalidraw-api`](crates/excalidraw-api/README.md) | Reading and writing scenes in an Excalidraw Plus workspace over the public REST API. |
 
 Chart helpers include lines, scatter, bars, areas, pie/donut, supplied bands and
 error bars, histograms, and steps/ECDFs. They support numeric and calendar axes,

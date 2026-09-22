@@ -24,7 +24,9 @@ for distribution status and publication steps.
 
 ## Quick Start
 
-```rust
+<!-- `no_run`: the example writes into the current directory, so it is
+     compiled but not executed. -->
+```rust,no_run
 use excaliplot::{LineChart, Overwrite};
 
 let scene = LineChart::new(&[(1., 2.), (5., 8.), (9., 4.)], 0.0..10.0, 0.0..10.0)

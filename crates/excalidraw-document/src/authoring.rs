@@ -4,7 +4,7 @@ mod composition;
 mod resources;
 use crate::{
     BindMode, Binding, BindingKind, BoundElement, Document, Element, ElementId, ElementKind, Error,
-    Field, Number, Point, Profile, Purpose, Severity, binding, bound_element, element,
+    Field, Number, Point, Profile, Purpose, binding, bound_element, element,
 };
 pub use batch::AuthoringBatch;
 pub use composition::FrameOrder;
@@ -291,15 +291,7 @@ impl Element {
 }
 
 fn check(document: &Document, profile: Profile) -> Result<(), Error> {
-    let report = document.validate(profile, Purpose::Author);
-    if let Some(d) = report
-        .diagnostics
-        .into_iter()
-        .find(|d| d.severity == Severity::Error)
-    {
-        return Err(Error::at(d.path, format!("{}: {}", d.code, d.message)));
-    }
-    Ok(())
+    document.validate(profile, Purpose::Author).into_result()
 }
 fn require_kind(element: &Element, kind: ElementKind) -> Result<(), Error> {
     if element.kind()? != Field::Value(kind.clone()) {

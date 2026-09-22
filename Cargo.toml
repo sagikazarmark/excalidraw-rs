@@ -25,6 +25,11 @@ tag-name = "v{{version}}"
 [[workspace.metadata.dagger.modules]]
 name = "rust"
 hack.check = ["--locked", "--each-feature"]
-hack.test = ["--locked", "--workspace-behavior=cargo"]
+# Tests run with every feature enabled. The default build of `excalidraw-api` is
+# `default = []`, so a plain `cargo test` compiles none of its HTTP client and
+# `tests/live_experiments.rs` (gated on `blocking`) expands to nothing. Feature
+# isolation is already covered by `hack.check --each-feature` above; this line
+# exists so the feature-gated code is executed, not merely type-checked.
+hack.test = ["--locked", "--all-features", "--workspace-behavior=cargo"]
 hack.clippy = ["--locked", "--workspace-behavior=cargo"]
 hack.doc = ["--locked", "--workspace-behavior=cargo"]

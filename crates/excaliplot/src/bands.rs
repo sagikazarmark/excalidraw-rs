@@ -1,4 +1,4 @@
-use crate::cartesian::{Frame, MARGIN, TICK_SIZE, Ticks};
+use crate::cartesian::{Frame, TICK_SIZE, Ticks};
 use crate::{AxisScale, Error, ExcalidrawBackend, LegendPosition, Scene, SketchStyle, TickFormat};
 use plotters::prelude::*;
 use std::ops::Range;
@@ -162,7 +162,7 @@ impl<'a> BandChart<'a> {
         if self.name.trim().is_empty() {
             return Err(Error::Invalid("band label must not be empty"));
         }
-        crate::cartesian::validate_opacity(self.opacity)?;
+        crate::cartesian::validate_opacity(self.opacity, crate::cartesian::MARK_OPACITY)?;
         if !(1..=20).contains(&self.width) {
             return Err(Error::Invalid("band line width must be 1..=20 scene units"));
         }
@@ -233,15 +233,8 @@ impl<'a> BandChart<'a> {
             self.tick_count.1,
             |v| self.y_format.label(*v),
         )?;
-        let label_width = crate::typography::measure(self.name, f64::from(TICK_SIZE))?.0;
-        if self.legend && label_width > f64::from(self.size.0) {
-            return Err(Error::Invalid("legend label exceeds chart width").into());
-        }
-        let legend = if self.legend {
-            label_width.ceil() as u32 + 28 + 8 + 28
-        } else {
-            0
-        };
+        let legend =
+            crate::cartesian::single_legend_width(self.name, self.legend, self.size.0, 28)?;
         let layout = frame.layout([xt.max_width(), yt.max_width()], legend)?;
         let root = ExcalidrawBackend::new(scene, self.size)?.into_drawing_area();
         root.fill(&WHITE)?;
@@ -258,11 +251,9 @@ impl<'a> BandChart<'a> {
             let upper = map_path(self.upper);
             let lower = map_path(self.lower);
             if upper.windows(2).any(|ps| ps[0].0 == ps[1].0)
-                || upper
-                    .iter()
-                    .zip(&lower)
-                    .enumerate()
-                    .any(|(i, (u, l))| self.lower[i] != self.upper[i] && u.1 == l.1)
+                || upper.iter().zip(&lower).enumerate().any(|(i, (u, l))| {
+                    crate::cartesian::collapsed((self.lower[i], self.upper[i]), (u.1, l.1))
+                })
             {
                 return Err(Error::Invalid(
                     "band collapses at this pixel resolution; narrow bounds or increase size",
@@ -310,7 +301,7 @@ impl<'a> BandChart<'a> {
             })?;
             if self.legend {
                 series.scope(|| -> DrawResult {
-                    let x = (self.size.0 - MARGIN - legend + 12) as i32;
+                    let x = crate::cartesian::legend_left(self.size.0, legend);
                     root.draw(&Rectangle::new(
                         [(x, 85), (x + 28, 99)],
                         self.color.mix(self.opacity).filled(),

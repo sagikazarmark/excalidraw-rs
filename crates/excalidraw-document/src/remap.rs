@@ -1,6 +1,4 @@
-use crate::{
-    Document, ElementId, ElementKind, Error, FileId, GroupId, Object, element, wire::pointer,
-};
+use crate::{Document, ElementId, ElementKind, Error, FileId, GroupId, Object, wire::pointer};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -103,11 +101,15 @@ impl Document {
                 continue;
             }
             for (k, v) in o {
-                if !element::FIELDS.contains(&k.as_str())
-                    || !crate::validation::field_applies(kind, k, o)
-                    || k == "customData"
-                    || (k == "link" && !v.is_null())
-                {
+                // Classification, not vocabulary membership: a field this crate
+                // can name is not automatically a field remapping understands.
+                // `None` covers both genuinely unknown keys and known keys added
+                // to the vocabulary without a reference classification.
+                let unassessed = match crate::model::element_reference_kind(k) {
+                    None | Some(crate::model::ReferenceKind::Opaque) => true,
+                    Some(_) => !crate::validation::applies(kind, k, o),
+                };
+                if unassessed || (k == "link" && !v.is_null()) {
                     opaque.push(format!("{p}{}", pointer(k)));
                 }
             }
@@ -234,7 +236,7 @@ impl Document {
                 continue;
             }
             for k in ["frameId", "containerId"] {
-                if crate::validation::field_applies(&kind, k, o) {
+                if crate::validation::applies(&kind, k, o) {
                     reference(o, k, &ids, &p)?;
                 }
             }
@@ -247,7 +249,7 @@ impl Document {
                 }
             }
             for key in ["startBinding", "endBinding"] {
-                if !crate::validation::field_applies(&kind, key, o) {
+                if !crate::validation::applies(&kind, key, o) {
                     continue;
                 }
                 if let Some(v) = o.get_mut(key)

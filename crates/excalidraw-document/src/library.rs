@@ -25,16 +25,9 @@ impl LibraryItem {
     }
 
     pub(crate) fn check_authored(&self, profile: Profile) -> Result<(), Error> {
-        let report = LibraryDocument::new("library-authoring", vec![self.clone()])
-            .validate(profile, Purpose::Author);
-        if let Some(d) = report
-            .diagnostics
-            .into_iter()
-            .find(|d| d.severity == Severity::Error)
-        {
-            return Err(Error::at(d.path, format!("{}: {}", d.code, d.message)));
-        }
-        Ok(())
+        LibraryDocument::new("library-authoring", vec![self.clone()])
+            .validate(profile, Purpose::Author)
+            .into_result()
     }
 }
 
@@ -238,7 +231,13 @@ impl LibraryDocument {
                 }
             }
             let document = Document::from_value(json!({"type":"excalidraw","version":2,"source":"library-validation","elements":elements,"appState":{},"files":{}})).unwrap();
-            let mut result = document.validate(profile, purpose);
+            // A library document has no standard `files` field, so a `fileId`
+            // here is not a dangling reference — it is the only shape available.
+            let mut result = document.validate_scoped(
+                profile,
+                purpose,
+                crate::validation::Resources::OutOfScope,
+            );
             for d in &mut result.diagnostics {
                 d.path = if legacy {
                     format!(

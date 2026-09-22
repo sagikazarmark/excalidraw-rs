@@ -96,6 +96,110 @@ fields!(element, ElementRecord, Element {
     FILE_ID: FileId=>"fileId", STATUS: ImageStatus=>"status", SCALE: Point=>"scale", CROP: ImageCrop=>"crop",
     NAME: String=>"name", BASE_HEIGHT: Number=>"baseHeight"
 });
+
+/// What identities a field's value can carry.
+///
+/// This is the companion to the element vocabulary directly above, and it exists
+/// for one reason: [`Document::remap_ids`](crate::Document::remap_ids) must never
+/// pass a reference through untouched merely because it did not recognise the
+/// field holding it. Recognition and relabeling are separate facts, so they get
+/// separate tables — using the vocabulary itself as the "remap understands this"
+/// test silently weakened [`OpaquePolicy::Reject`](crate::OpaquePolicy) every
+/// time a field was added.
+///
+/// Every name in [`element::FIELDS`] appears here exactly once; `tests/remap.rs`
+/// asserts both directions. A field added above without a row here is classified
+/// as unknown and reported as unassessed, which is the safe direction.
+///
+/// `link` is [`ReferenceKind::None`]: it carries no identity this crate relabels.
+/// Whether a *non-null* link is opaque is a value-dependent policy that stays in
+/// `remap_ids`, not a property of the field.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum ReferenceKind {
+    /// Geometry, style, text, flags, timestamps: no identity.
+    None,
+    /// One element id.
+    Element,
+    /// A list of group ids.
+    Group,
+    /// One file id.
+    File,
+    /// A nested record or list whose own vocabulary carries element ids.
+    Nested,
+    /// Host-defined content this crate will not interpret.
+    Opaque,
+}
+
+pub(crate) const ELEMENT_REFERENCES: &[(&str, ReferenceKind)] = &[
+    ("type", ReferenceKind::None),
+    ("id", ReferenceKind::Element),
+    ("x", ReferenceKind::None),
+    ("y", ReferenceKind::None),
+    ("width", ReferenceKind::None),
+    ("height", ReferenceKind::None),
+    ("angle", ReferenceKind::None),
+    ("strokeColor", ReferenceKind::None),
+    ("backgroundColor", ReferenceKind::None),
+    ("fillStyle", ReferenceKind::None),
+    ("strokeWidth", ReferenceKind::None),
+    ("strokeStyle", ReferenceKind::None),
+    ("roundness", ReferenceKind::None),
+    ("roughness", ReferenceKind::None),
+    ("opacity", ReferenceKind::None),
+    ("seed", ReferenceKind::None),
+    ("version", ReferenceKind::None),
+    ("versionNonce", ReferenceKind::None),
+    ("index", ReferenceKind::None),
+    ("isDeleted", ReferenceKind::None),
+    ("groupIds", ReferenceKind::Group),
+    ("frameId", ReferenceKind::Element),
+    ("boundElements", ReferenceKind::Nested),
+    ("updated", ReferenceKind::None),
+    ("created", ReferenceKind::None),
+    ("link", ReferenceKind::None),
+    ("locked", ReferenceKind::None),
+    ("customData", ReferenceKind::Opaque),
+    ("fontSize", ReferenceKind::None),
+    ("fontFamily", ReferenceKind::None),
+    ("baseFontSize", ReferenceKind::None),
+    ("text", ReferenceKind::None),
+    ("originalText", ReferenceKind::None),
+    ("textAlign", ReferenceKind::None),
+    ("verticalAlign", ReferenceKind::None),
+    ("containerId", ReferenceKind::Element),
+    ("autoResize", ReferenceKind::None),
+    ("lineHeight", ReferenceKind::None),
+    ("labelPosition", ReferenceKind::None),
+    ("points", ReferenceKind::None),
+    ("startBinding", ReferenceKind::Nested),
+    ("endBinding", ReferenceKind::Nested),
+    ("startArrowhead", ReferenceKind::None),
+    ("endArrowhead", ReferenceKind::None),
+    ("lastCommittedPoint", ReferenceKind::None),
+    ("polygon", ReferenceKind::None),
+    ("elbowed", ReferenceKind::None),
+    ("fixedSegments", ReferenceKind::None),
+    ("startIsSpecial", ReferenceKind::None),
+    ("endIsSpecial", ReferenceKind::None),
+    ("pressures", ReferenceKind::None),
+    ("simulatePressure", ReferenceKind::None),
+    ("strokeOptions", ReferenceKind::None),
+    ("fileId", ReferenceKind::File),
+    ("status", ReferenceKind::None),
+    ("scale", ReferenceKind::None),
+    ("crop", ReferenceKind::None),
+    ("name", ReferenceKind::None),
+    ("baseHeight", ReferenceKind::None),
+];
+
+/// The classification for `field`, or `None` when the field is not classified —
+/// which callers must treat as "not understood", never as "carries nothing".
+pub(crate) fn element_reference_kind(field: &str) -> Option<ReferenceKind> {
+    ELEMENT_REFERENCES
+        .iter()
+        .find(|(name, _)| *name == field)
+        .map(|(_, kind)| *kind)
+}
 fields!(binding, BindingRecord, Binding { ELEMENT_ID: ElementId=>"elementId", FOCUS: Number=>"focus", GAP: Number=>"gap", FIXED_POINT: Point=>"fixedPoint", MODE: BindMode=>"mode" });
 fields!(bound_element, BoundElementRecord, BoundElement { ID: ElementId=>"id", TYPE: BindingKind=>"type" });
 fields!(roundness, RoundnessRecord, Roundness { TYPE: RoundnessType=>"type", VALUE: Number=>"value" });

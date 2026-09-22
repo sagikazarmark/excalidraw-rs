@@ -67,3 +67,36 @@ fn unknown_kind_properties_are_opaque_even_when_their_names_resemble_references(
             .contains(&"/elements/0/type".to_owned())
     );
 }
+
+/// The vocabulary and the reference classification must stay in step.
+///
+/// These two assertions are the guardrail for a specific failure: adding a field
+/// to the `fields!` vocabulary used to *remove* it from the unassessed set, so a
+/// new reference-carrying field would be silently preserved by `remap_ids` and
+/// pass `OpaquePolicy::Reject`. Classification is now separate, and a field
+/// added without a row here fails this test instead of weakening the guarantee.
+#[test]
+fn every_element_field_has_a_reference_classification() {
+    let unclassified: Vec<&str> = excalidraw_document::element_fields()
+        .iter()
+        .copied()
+        .filter(|field| !excalidraw_document::classified_element_fields().contains(field))
+        .collect();
+    assert!(
+        unclassified.is_empty(),
+        "these element fields have no reference classification: {unclassified:?}"
+    );
+}
+
+#[test]
+fn the_reference_classification_names_no_field_outside_the_vocabulary() {
+    let stale: Vec<&str> = excalidraw_document::classified_element_fields()
+        .iter()
+        .copied()
+        .filter(|field| !excalidraw_document::element_fields().contains(field))
+        .collect();
+    assert!(
+        stale.is_empty(),
+        "these classified names are not element fields: {stale:?}"
+    );
+}

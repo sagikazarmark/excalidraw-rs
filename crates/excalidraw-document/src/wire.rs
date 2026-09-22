@@ -48,12 +48,25 @@ pub enum Field<T> {
 pub struct Number(pub serde_json::Number);
 impl Number {
     pub(crate) fn check_dimension(&self, path: &str) -> Result<(), Error> {
-        let value = self.as_f64().map_err(|e| Error::at(path, e.message))?;
-        // Reject negative numbers that underflow to -0.0, but permit exact -0.
-        if value.is_sign_negative() && self.as_safe_integer() != Ok(0) {
+        self.as_f64().map_err(|e| Error::at(path, e.message))?;
+        if self.is_negative_nonzero() {
             return Err(Error::at(path, "dimension must be nonnegative"));
         }
         Ok(())
+    }
+    /// Whether the stored decimal is negative and not exactly zero.
+    ///
+    /// `as_f64` underflows a tiny negative magnitude such as `-1e-400` to
+    /// `-0.0`, which is neither less than a zero floor nor distinguishable
+    /// from `0.0` by comparison, so a range check that consults f64 alone
+    /// admits it. The stored decimal still carries the sign, so ask that.
+    /// Exact `-0` is permitted: it is zero, spelled with a sign.
+    ///
+    /// Both the authoring path ([`Self::check_dimension`]) and the validating
+    /// range table judge nonnegative fields through this, so the two cannot
+    /// disagree about which numbers are admissible.
+    pub(crate) fn is_negative_nonzero(&self) -> bool {
+        self.as_f64().is_ok_and(f64::is_sign_negative) && self.as_safe_integer() != Ok(0)
     }
     pub fn from_f64(value: f64) -> Result<Self, Error> {
         serde_json::Number::from_f64(value)

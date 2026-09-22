@@ -1,0 +1,59 @@
+[package]
+name = "excalidraw-api"
+version.workspace = true
+description = "Typed client for the Excalidraw Plus REST API, built on excalidraw-document"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+keywords = ["excalidraw", "api", "client", "rest", "scene"]
+categories = ["api-bindings", "web-programming::http-client"]
+
+[features]
+default = []
+# The working client: transport plus a cryptography provider. Prefer this.
+client = ["client-core", "provider-ring"]
+# Transport only. You must install a rustls CryptoProvider yourself before
+# constructing a Client, or the first request panics inside reqwest.
+client-core = ["dep:reqwest"]
+provider-ring = ["client-core", "dep:rustls"]
+blocking = ["client", "reqwest/blocking"]
+retry = ["client", "dep:tokio"]
+
+[dependencies]
+excalidraw-document = { path = "../excalidraw-document", version = "0.2.0" }
+
+percent-encoding = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = { version = "1", features = ["arbitrary_precision", "raw_value"] }
+
+reqwest = { version = "0.13", optional = true, default-features = false, features = [
+  "json",
+  "charset",
+  "http2",
+  "rustls-no-provider",
+] }
+# ring needs a C compiler but no cmake, unlike the aws-lc-sys that reqwest's
+# own `rustls` feature would pull in.
+rustls = { version = "0.23", optional = true, default-features = false, features = [
+  "ring",
+  "std",
+] }
+# Only for the async retry sleep; the blocking client uses std::thread.
+tokio = { version = "1", optional = true, default-features = false, features = ["time"] }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+# Only to drive the async client's tests: `#[tokio::test]` needs `macros`, and
+# the runtime it builds needs `rt`. The IO and time drivers the async tests
+# exercise come from reqwest's own tokio features, so nothing more is enabled
+# here. Cargo features are additive, so this does not change what the crate
+# itself compiles for any of its own features.
+tokio = { version = "1", default-features = false, features = ["rt", "macros"] }
+# Acyclic: nothing in the workspace depends on excalidraw-api, so the end-to-end
+# example may render a real chart. Publish excaliplot before this crate.
+excaliplot = { path = "../excaliplot", version = "0.2.0" }
+
+[[example]]
+name = "publish_chart"
+required-features = ["blocking"]

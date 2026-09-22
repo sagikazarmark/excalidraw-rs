@@ -197,8 +197,12 @@ fn containers_have_at_most_one_live_label_and_report_both_conflicting_paths() {
                 .validate(profile, Purpose::Author)
                 .diagnostics
                 .iter()
+                // The message must still identify the conflicting label, but by
+                // its position in this element array rather than by an absolute
+                // pointer: the same elements are validated inside a library
+                // item, where `/elements/1` names nothing that exists.
                 .any(|d| d.code == "multiple-labels"
-                    && d.message.contains("/elements/1/containerId"))
+                    && d.message.contains("already has a live label at element 1"))
         );
         second.set_raw("isDeleted", json!(true));
         container.set_raw("boundElements", json!([{"id":"label","type":"text"}]));

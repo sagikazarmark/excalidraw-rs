@@ -100,6 +100,13 @@
 //! runtime, HTTP client, or filesystem overwrite policy. Document input is not
 //! restricted to the Plotters backend's coordinates, fonts, or glyph subset.
 
+// The README's examples are contracts too, and nothing compiled them: they are
+// near-copies of the doctests above that drifted independently. `cfg(doctest)`
+// compiles their fences without prepending the README to the rendered docs.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+mod readme {}
+
 mod authoring;
 mod clipboard;
 mod document;
@@ -143,4 +150,21 @@ impl Profile {
             Self::SnapshotAfa3a653 => "afa3a653fc5d2b742adcbd5a6063187b056d2419",
         }
     }
+}
+
+/// The element field vocabulary, for tests that assert it stays in step with
+/// the reference classification below. Not part of the supported interface.
+#[doc(hidden)]
+pub fn element_fields() -> &'static [&'static str] {
+    model::element::FIELDS
+}
+
+/// The names carrying a reference classification. Paired with
+/// [`element_fields`]; see `tests/remap.rs`. Not part of the supported interface.
+#[doc(hidden)]
+pub fn classified_element_fields() -> Vec<&'static str> {
+    model::ELEMENT_REFERENCES
+        .iter()
+        .map(|(name, _)| *name)
+        .collect()
 }

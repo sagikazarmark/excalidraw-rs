@@ -1,0 +1,388 @@
+//! Offline coverage for the async HTTP client, over the same loopback origin.
+//!
+//! [`excalidraw_api::Client`] is the primary client — the blocking one is a
+//! convenience fork of it — but every test the crate had exercised the fork.
+//! The two `send`, `collect` and `send_retrying` bodies are near-identical
+//! copies, so a fix has to be made twice; before this suite, only one copy was
+//! ever run.
+//!
+//! Each test here is the deliberate twin of the like-named test in
+//! `client_loopback.rs`, over the harness both share (`tests/common`). Read as a
+//! pair, a divergence between the two files is a divergence between the two
+//! clients.
+//!
+//! Scope note carries over: a local origin models transport mechanics only and
+//! proves the client's behaviour, never Excalidraw Plus's.
+#![cfg(feature = "client")]
+
+use excalidraw_api::{
+    ApiKey, Client, ClientConfig, PageRequest,
+    model::NewCollection,
+    op::{CreateCollection, ListCollections},
+};
+
+mod common;
+
+use common::{JSON, origin, page};
+
+fn client(base: &str) -> Client {
+    Client::with_config(
+        ApiKey::new("test-key").expect("key"),
+        ClientConfig::default().base_url(base.to_owned()),
+    )
+    .expect("client")
+}
+
+#[tokio::test]
+async fn a_trailing_slash_on_the_base_url_does_not_double_the_separator() {
+    let (base, handle) = origin(vec![(
+        200,
+        vec![JSON],
+        r#"{"limit":10,"offset":0,"hasNextPage":false,"data":[]}"#,
+    )]);
+    let client = Client::with_config(
+        ApiKey::new("test-key").expect("key"),
+        // The documented normalisation: a trailing slash is trimmed away.
+        ClientConfig::default().base_url(format!("{base}/")),
+    )
+    .expect("client");
+
+    client
+        .send(ListCollections {
+            page: PageRequest::new(),
+        })
+        .await
+        .expect("send");
+
+    let seen = handle.join().expect("origin thread");
+    assert_eq!(seen[0].start_line, "GET /collections HTTP/1.1");
+}
+
+#[tokio::test]
+async fn the_api_key_is_sent_as_a_bearer_token_and_never_logged_in_the_path() {
+    let (base, handle) = origin(vec![(
+        200,
+        vec![JSON],
+        r#"{"limit":10,"offset":0,"hasNextPage":false,"data":[]}"#,
+    )]);
+
+    client(&base)
+        .send(ListCollections {
+            page: PageRequest::new().limit(25).offset(50),
+        })
+        .await
+        .expect("send");
+
+    let seen = handle.join().expect("origin thread");
+    assert_eq!(seen[0].header("authorization"), Some("Bearer test-key"));
+    // Query parameters are emitted in declaration order.
+    assert_eq!(
+        seen[0].start_line,
+        "GET /collections?limit=25&offset=50 HTTP/1.1"
+    );
+    assert!(!seen[0].start_line.contains("test-key"));
+}
+
+#[tokio::test]
+async fn a_bodyless_request_carries_no_content_type_and_a_json_body_carries_one() {
+    let listing = r#"{"limit":10,"offset":0,"hasNextPage":false,"data":[]}"#;
+    let created =
+        r#"{"id":"c1","name":"Team","workspace":"w","created":"2026-01-01T00:00:00.000Z"}"#;
+    let (base, handle) = origin(vec![(200, vec![JSON], listing), (200, vec![JSON], created)]);
+    let client = client(&base);
+
+    client
+        .send(ListCollections {
+            page: PageRequest::new(),
+        })
+        .await
+        .expect("list");
+    client
+        .send(CreateCollection {
+            collection: NewCollection {
+                name: "Team".to_owned(),
+            },
+        })
+        .await
+        .expect("create");
+
+    let seen = handle.join().expect("origin thread");
+    assert_eq!(seen[0].header("content-type"), None);
+    assert_eq!(seen[1].header("content-type"), Some("application/json"));
+    // The body is sent verbatim, not re-serialised by the transport.
+    assert_eq!(seen[1].body, r#"{"name":"Team"}"#);
+    assert_eq!(seen[1].start_line, "POST /collections HTTP/1.1");
+}
+
+#[tokio::test]
+async fn the_user_agent_carries_the_crate_version_and_the_configured_suffix() {
+    let (base, handle) = origin(vec![(
+        200,
+        vec![JSON],
+        r#"{"limit":10,"offset":0,"hasNextPage":false,"data":[]}"#,
+    )]);
+    let client = Client::with_config(
+        ApiKey::new("test-key").expect("key"),
+        ClientConfig::default()
+            .base_url(base.clone())
+            .user_agent_suffix("excaliplot-tests"),
+    )
+    .expect("client");
+
+    client
+        .send(ListCollections {
+            page: PageRequest::new(),
+        })
+        .await
+        .expect("send");
+
+    let seen = handle.join().expect("origin thread");
+    let agent = seen[0].header("user-agent").expect("user-agent");
+    assert!(agent.starts_with("excalidraw-api/"), "{agent}");
+    assert!(agent.ends_with(" excaliplot-tests"), "{agent}");
+}
+
+#[tokio::test]
+async fn the_rate_limit_latch_records_headers_and_a_later_bare_response_does_not_clear_it() {
+    let listing = r#"{"limit":10,"offset":0,"hasNextPage":false,"data":[]}"#;
+    let (base, handle) = origin(vec![
+        (
+            200,
+            vec![
+                JSON,
+                ("X-RateLimit-Limit", "600"),
+                ("X-RateLimit-Remaining", "599"),
+                ("X-RateLimit-Reset", "1790000000"),
+            ],
+            listing,
+        ),
+        (200, vec![JSON], listing),
+    ]);
+    let client = client(&base);
+
+    assert!(client.last_rate_limit().is_none(), "nothing sent yet");
+
+    client
+        .send(ListCollections {
+            page: PageRequest::new(),
+        })
+        .await
+        .expect("first");
+    let seen_limit = client.last_rate_limit().expect("latched");
+    assert_eq!(seen_limit.limit, Some(600));
+    assert_eq!(seen_limit.remaining, Some(599));
+    assert_eq!(seen_limit.reset, Some(1_790_000_000));
+
+    client
+        .send(ListCollections {
+            page: PageRequest::new(),
+        })
+        .await
+        .expect("second");
+    // A response with no rate-limit headers must not clobber a good reading.
+    let still = client.last_rate_limit().expect("retained");
+    assert_eq!(still.remaining, Some(599));
+
+    handle.join().expect("origin thread");
+}
+
+#[tokio::test]
+async fn collect_stops_requesting_once_the_budget_is_spent() {
+    // Three pages are available and each carries one item, but the caller asked
+    // for two. A third request would be wasted: its page cannot be used, and it
+    // still costs rate-limit budget. Regression for the over-fetch fixed in
+    // `page::absorb`.
+    let (base, handle) = origin(vec![
+        (
+            200,
+            vec![JSON],
+            Box::leak(page(&["a"], true, 0).into_boxed_str()),
+        ),
+        (
+            200,
+            vec![JSON],
+            Box::leak(page(&["b"], true, 1).into_boxed_str()),
+        ),
+        (
+            200,
+            vec![JSON],
+            Box::leak(page(&["c"], true, 2).into_boxed_str()),
+        ),
+    ]);
+
+    let collected = client(&base)
+        .collect(
+            |page| ListCollections { page },
+            PageRequest::new().limit(1),
+            2,
+        )
+        .await
+        .expect("collect");
+
+    let seen = handle.join().expect("origin thread");
+    assert_eq!(collected.len(), 2);
+    assert_eq!(
+        seen.len(),
+        2,
+        "asked for 2 items at 1 per page; a third request is an over-fetch"
+    );
+    assert_eq!(
+        seen[1].start_line,
+        "GET /collections?limit=1&offset=1 HTTP/1.1"
+    );
+}
+
+#[tokio::test]
+async fn collect_walks_every_page_until_the_server_reports_no_next() {
+    let (base, handle) = origin(vec![
+        (
+            200,
+            vec![JSON],
+            Box::leak(page(&["a"], true, 0).into_boxed_str()),
+        ),
+        (
+            200,
+            vec![JSON],
+            Box::leak(page(&["b"], false, 1).into_boxed_str()),
+        ),
+    ]);
+
+    let collected = client(&base)
+        .collect(
+            |page| ListCollections { page },
+            PageRequest::new().limit(1),
+            100,
+        )
+        .await
+        .expect("collect");
+
+    let seen = handle.join().expect("origin thread");
+    assert_eq!(collected.len(), 2);
+    assert_eq!(
+        seen.len(),
+        2,
+        "the walk ends on hasNextPage=false, not on a wasted probe"
+    );
+}
+
+#[tokio::test]
+async fn a_documented_error_envelope_becomes_an_api_error_with_its_status() {
+    let (base, handle) = origin(vec![(
+        404,
+        vec![JSON],
+        r#"{"statusCode":404,"error":"Not Found","message":"no such collection"}"#,
+    )]);
+
+    let error = client(&base)
+        .send(ListCollections {
+            page: PageRequest::new(),
+        })
+        .await
+        .expect_err("404 is an error");
+
+    handle.join().expect("origin thread");
+    match error {
+        excalidraw_api::Error::Api {
+            status,
+            kind,
+            message,
+        } => {
+            assert_eq!(status, 404);
+            assert_eq!(kind, "Not Found");
+            assert_eq!(message, "no such collection");
+        }
+        other => panic!("expected Error::Api, got {other:?}"),
+    }
+}
+
+#[cfg(feature = "retry")]
+mod retry {
+    use super::*;
+    use excalidraw_api::{Backoff, RetryPolicy};
+    use std::time::Duration;
+
+    fn immediate(max_retries: u32) -> RetryPolicy {
+        RetryPolicy {
+            max_retries,
+            backoff: Backoff {
+                initial: Duration::from_millis(1),
+                max: Duration::from_millis(1),
+                factor_percent: 100,
+            },
+            respect_reset: false,
+        }
+    }
+
+    #[tokio::test]
+    async fn a_retried_get_makes_exactly_one_attempt_more_than_the_retry_budget() {
+        let unavailable = r#"{"statusCode":503,"error":"Service Unavailable","message":"down"}"#;
+        let (base, handle) = origin(vec![
+            (503, vec![JSON], unavailable),
+            (503, vec![JSON], unavailable),
+            (503, vec![JSON], unavailable),
+        ]);
+
+        let error = client(&base)
+            .send_retrying(
+                ListCollections {
+                    page: PageRequest::new(),
+                },
+                immediate(2),
+            )
+            .await
+            .expect_err("still failing after the budget");
+
+        let seen = handle.join().expect("origin thread");
+        assert_eq!(seen.len(), 3, "1 initial attempt + 2 retries");
+        // A 5xx carrying the documented envelope is a typed `Api` error, not
+        // `Unexpected` — and it is still retryable.
+        assert!(
+            matches!(error, excalidraw_api::Error::Api { status: 503, .. }),
+            "{error:?}"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_retried_get_succeeds_on_a_later_attempt_without_replaying_the_success() {
+        let unavailable = r#"{"statusCode":503,"error":"Service Unavailable","message":"down"}"#;
+        let listing = r#"{"limit":10,"offset":0,"hasNextPage":false,"data":[]}"#;
+        let (base, handle) = origin(vec![
+            (503, vec![JSON], unavailable),
+            (200, vec![JSON], listing),
+        ]);
+
+        client(&base)
+            .send_retrying(
+                ListCollections {
+                    page: PageRequest::new(),
+                },
+                immediate(3),
+            )
+            .await
+            .expect("second attempt succeeds");
+
+        let seen = handle.join().expect("origin thread");
+        assert_eq!(seen.len(), 2, "the walk stops at the first success");
+    }
+
+    #[tokio::test]
+    async fn a_post_is_never_retried_even_when_the_status_is_retryable() {
+        let unavailable = r#"{"statusCode":503,"error":"Service Unavailable","message":"down"}"#;
+        let (base, handle) = origin(vec![(503, vec![JSON], unavailable)]);
+
+        client(&base)
+            .send_retrying(
+                CreateCollection {
+                    collection: NewCollection {
+                        name: "Team".to_owned(),
+                    },
+                },
+                immediate(3),
+            )
+            .await
+            .expect_err("POST fails without retrying");
+
+        let seen = handle.join().expect("origin thread");
+        assert_eq!(seen.len(), 1, "POST has no published idempotency key");
+    }
+}

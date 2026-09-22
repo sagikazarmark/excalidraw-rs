@@ -42,6 +42,22 @@ impl ValidationReport {
             message: message.into(),
         });
     }
+    /// Collapse the report into the single failure [`Error`] can express, for
+    /// gating a mutation on it.
+    ///
+    /// Deliberately lossy: [`Error`] is one path and message, so the first
+    /// error wins and warnings are dropped. Callers that want the findings
+    /// themselves read [`ValidationReport::diagnostics`] instead.
+    pub(crate) fn into_result(self) -> Result<(), Error> {
+        match self
+            .diagnostics
+            .into_iter()
+            .find(|d| d.severity == Severity::Error)
+        {
+            Some(d) => Err(Error::at(d.path, format!("{}: {}", d.code, d.message))),
+            None => Ok(()),
+        }
+    }
     fn errors(&mut self, prefix: &str, errors: Vec<Error>) {
         for e in errors {
             self.issue(
@@ -54,10 +70,34 @@ impl ValidationReport {
     }
 }
 
+/// Whether the container being validated is able to carry binary resources.
+///
+/// A scene carries a `files` map, so an element referencing an absent resource
+/// is a real finding. A library document has no standard `files` field at all,
+/// so the same reference is expected and reporting it produces a diagnostic no
+/// caller can act on — and, under [`Purpose::SelfContained`], fails every
+/// image-bearing library item.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub(crate) enum Resources {
+    /// The container carries resources; a dangling `fileId` is a finding.
+    Carried,
+    /// The container cannot carry resources; `fileId` references are not checked.
+    OutOfScope,
+}
+
 impl Document {
     /// Nonmutating scalar, profile, reference and resource inspection. Inspect
     /// permits missing historical fields; Author requires complete declared data.
     pub fn validate(&self, profile: Profile, purpose: Purpose) -> ValidationReport {
+        self.validate_scoped(profile, purpose, Resources::Carried)
+    }
+
+    pub(crate) fn validate_scoped(
+        &self,
+        profile: Profile,
+        purpose: Purpose,
+        resources: Resources,
+    ) -> ValidationReport {
         let mut report = ValidationReport::default();
         if purpose != Purpose::Inspect {
             required(
@@ -356,9 +396,20 @@ impl Document {
                 ("roughness", 0., f64::MAX),
                 ("labelPosition", 0., 1.),
             ] {
-                if let Some(n) = object.get(field).and_then(Value::as_f64)
-                    && (n < min || n > max)
-                {
+                let Some(stored) = object.get(field) else {
+                    continue;
+                };
+                let Some(n) = stored.as_f64() else {
+                    continue;
+                };
+                // A floor of zero cannot be enforced by comparison alone: a
+                // tiny negative magnitude underflows to -0.0, which is not
+                // less than 0. Ask the stored decimal for the sign, exactly
+                // as the authoring path does.
+                let underflowed = min == 0.
+                    && matches!(stored, Value::Number(raw)
+                        if crate::Number(raw.clone()).is_negative_nonzero());
+                if n < min || n > max || underflowed {
                     report.issue(
                         format!("{path}/{field}"),
                         "range",
@@ -431,7 +482,14 @@ impl Document {
                                 format!("{path}/{field}"),
                                 "multiple-labels",
                                 compatibility_severity(purpose),
-                                format!("container {target} already has a live label at /elements/{first}/containerId"),
+                                // Identify the conflicting sibling by its position
+                                // in this element array, not by an absolute
+                                // pointer: the same elements are validated inside
+                                // a library item, where `/elements/N` names
+                                // nothing that exists.
+                                format!(
+                                    "container {target} already has a live label at element {first}"
+                                ),
                             );
                         } else {
                             live_labels.insert(target, i);
@@ -442,7 +500,7 @@ impl Document {
                                 "bound-text-order",
                                 compatibility_severity(purpose),
                                 format!(
-                                    "live label must follow container {target} at /elements/{}",
+                                    "live label must follow container {target} at element {}",
                                     ids[target][0]
                                 ),
                             );
@@ -558,7 +616,8 @@ impl Document {
                     }
                 }
             }
-            if semantics::applies(kind, "fileId", object)
+            if resources == Resources::Carried
+                && semantics::applies(kind, "fileId", object)
                 && let Some(id) = object.get("fileId").and_then(Value::as_str)
                 && files.is_none_or(|f| !f.contains_key(id))
             {
@@ -625,46 +684,142 @@ impl Document {
         if let Some(files) = files {
             for (id, value) in files {
                 let path = format!("/files{}", pointer(id));
-                let Some(o) = value.as_object() else {
-                    report.issue(path, "file-shape", Severity::Error, "expected file object");
-                    continue;
-                };
-                report.errors(
-                    &path,
-                    binary_file::check(&BinaryFile::from_object(o.clone())),
-                );
-                check_present(&mut report, o, &path, binary_file::FIELDS, &[]);
-                for key in ["created", "lastRetrieved", "version"] {
-                    if let Some(Value::Number(n)) = o.get(key)
-                        && crate::Number(n.clone()).as_safe_integer().is_err()
-                    {
-                        report.issue(
-                            format!("{path}/{key}"),
-                            "integer",
-                            Severity::Error,
-                            "expected safe integer metadata",
-                        );
-                    }
-                }
-                required(
-                    &mut report,
-                    o,
-                    &path,
-                    &["id", "mimeType", "dataURL", "created"],
-                    &[],
-                );
-                if o.get("id").and_then(Value::as_str) != Some(id) {
-                    report.issue(
-                        format!("{path}/id"),
-                        "file-id",
-                        Severity::Error,
-                        "file key and record ID differ",
-                    );
-                }
+                binary_file_record(&mut report, &path, Some(id), value, purpose);
             }
         }
         report
     }
+}
+
+/// Validate one binary file record, rooted at `path`.
+///
+/// Split out so a caller holding a single [`BinaryFile`] can check it directly
+/// instead of wrapping it in a throwaway [`Document`] and then stripping the
+/// fabricated prefix back off every diagnostic. Both routes run this same code,
+/// so a scene's `files` map and a standalone record cannot drift apart.
+///
+/// `key` is the owning map key when the record is stored in a scene; `None` for
+/// a standalone record, where there is no key to disagree with.
+pub(crate) fn binary_file_record(
+    report: &mut ValidationReport,
+    path: &str,
+    key: Option<&str>,
+    value: &Value,
+    purpose: Purpose,
+) {
+    let Some(o) = value.as_object() else {
+        report.issue(
+            path.to_owned(),
+            "file-shape",
+            Severity::Error,
+            "expected file object",
+        );
+        return;
+    };
+    report.errors(
+        path,
+        binary_file::check(&BinaryFile::from_object(o.clone())),
+    );
+    check_present(report, o, path, binary_file::FIELDS, &[]);
+    for name in ["created", "lastRetrieved", "version"] {
+        if let Some(Value::Number(n)) = o.get(name)
+            && crate::Number(n.clone()).as_safe_integer().is_err()
+        {
+            report.issue(
+                format!("{path}/{name}"),
+                "integer",
+                Severity::Error,
+                "expected safe integer metadata",
+            );
+        }
+    }
+    required(
+        report,
+        o,
+        path,
+        &["id", "mimeType", "dataURL", "created"],
+        &[],
+    );
+    // `required` only asks whether the field is present and non-null, so an
+    // empty string passes it. The element path spells this out separately for
+    // the same reason; a resource whose identity is empty cannot be addressed
+    // by the image element that references it. `BinaryFile::new` already
+    // refuses it, and this is what makes `validate` answer the same way.
+    if o.get("id").and_then(Value::as_str) == Some("") {
+        report.issue(
+            format!("{path}/id"),
+            "empty-id",
+            Severity::Error,
+            "empty identity",
+        );
+    }
+    if let Some(key) = key
+        && o.get("id").and_then(Value::as_str) != Some(key)
+    {
+        report.issue(
+            format!("{path}/id"),
+            "file-id",
+            Severity::Error,
+            "file key and record ID differ",
+        );
+    }
+    let mime = o.get("mimeType").and_then(Value::as_str);
+    if let Some(declared) = mime
+        && !MimeType::KNOWN.contains(&declared)
+    {
+        report.issue(
+            format!("{path}/mimeType"),
+            "mime-type",
+            // MimeType is an open enum so a preserving document can carry a
+            // format this crate does not recognise yet; condemning that would
+            // break the preserving promise. Only a self-contained document,
+            // which promises its embedded resources are usable, rules it out.
+            if purpose == Purpose::SelfContained {
+                Severity::Error
+            } else {
+                Severity::Warning
+            },
+            "unsupported MIME type",
+        );
+    }
+    // A data URL contradicting the record's own declared type is
+    // self-contradictory under every purpose, like unusable metadata above.
+    if let Some(url) = o.get("dataURL").and_then(Value::as_str)
+        && !mime.is_some_and(|m| data_url_carries(url, m))
+    {
+        report.issue(
+            format!("{path}/dataURL"),
+            "data-url",
+            Severity::Error,
+            "expected nonempty data URL matching MIME type",
+        );
+    }
+}
+
+/// Does `url` parse as a data URL that actually carries a payload of `mime`?
+///
+/// This is a fact about a binary file record, not about any one envelope, so
+/// every route that judges a record — [`binary_file_record`] here, the Plus
+/// transport in [`crate::plus`] — asks this one function rather than spelling
+/// the parse out again and drifting from it.
+///
+/// The media-type token is compared ASCII case-insensitively (RFC 2045 §5.1:
+/// type and subtype names are case-insensitive), so `IMAGE/PNG` and
+/// `image/png` agree. Membership of [`MimeType::KNOWN`] is a separate question
+/// and deliberately stays case-sensitive where it is asked: an
+/// uppercase-but-otherwise-recognised token is reported as an unrecognised
+/// MIME type even though it agrees with its own data URL — two different
+/// findings about two different things, not a contradiction.
+pub(crate) fn data_url_carries(url: &str, mime: &str) -> bool {
+    url.strip_prefix("data:")
+        .and_then(|s| s.split_once(','))
+        .is_some_and(|(header, payload)| {
+            !payload.is_empty()
+                && header
+                    .split(';')
+                    .next()
+                    .is_some_and(|token| token.eq_ignore_ascii_case(mime))
+        })
 }
 
 pub(crate) fn required(
@@ -1000,7 +1155,7 @@ fn frame_cycles(elements: &[Value], ids: &BTreeMap<&str, Vec<usize>>) -> Vec<boo
     cyclic
 }
 mod semantics;
-pub(crate) use semantics::applies as field_applies;
+pub(crate) use semantics::applies;
 pub(crate) use semantics::compatibility_severity;
 
 use crate::{Document, Error, Object, Profile, model::*, wire::pointer};

@@ -6,6 +6,10 @@
 use crate::{Document, Error, Number, Object, wire};
 use serde_json::Value;
 
+/// The `appState` keys the published Plus transport schema carries. Any other
+/// key is rejected, not stripped.
+pub const APP_STATE_KEYS: [&str; 2] = ["viewBackgroundColor", "lockedMultiSelections"];
+
 fn closed(o: &Object, keys: &[&str], path: &str) -> Result<(), Error> {
     for key in o.keys() {
         if !keys.contains(&key.as_str()) {
@@ -21,11 +25,7 @@ fn state(value: &Value, partial: bool) -> Result<(), Error> {
     let o = value
         .as_object()
         .ok_or_else(|| Error::at("/appState", "expected object"))?;
-    closed(
-        o,
-        &["viewBackgroundColor", "lockedMultiSelections"],
-        "/appState",
-    )?;
+    closed(o, &APP_STATE_KEYS, "/appState")?;
     if (!partial || o.contains_key("viewBackgroundColor"))
         && !o.get("viewBackgroundColor").is_some_and(Value::is_string)
     {
@@ -91,6 +91,20 @@ fn elements(value: &Value) -> Result<(), Error> {
 
 /// Paths to element features whose Plus support is not established by the dated
 /// public reference. Empty output still does not certify unpublished server rules.
+///
+/// # What a live run observed
+///
+/// Against one workspace on 2026-09-21, every feature reported here was in fact
+/// accepted by the service: `stickynote` (given a numeric `baseHeight`), and
+/// `created`, `baseFontSize` and `labelPosition` all round-tripped unchanged.
+/// One did not: **`freedraw.strokeOptions` was accepted and then silently
+/// stripped** — the write succeeded and the field was absent from the response.
+///
+/// These paths are still reported. A single workspace on a single date is not a
+/// published contract, and the `strokeOptions` result shows the failure mode
+/// this list exists to warn about: acceptance is not retention. Callers who have
+/// verified their own deployment can ignore the paths; callers who have not are
+/// better served by a warning that proves unnecessary than by silent loss.
 fn unconfirmed(root: &Object) -> Vec<String> {
     let mut result = vec![];
     if let Some(Value::Array(elements)) = root.get("elements") {
@@ -165,6 +179,30 @@ fn files(value: &Value) -> Result<(), Error> {
             return Err(Error::at(
                 format!("{p}/dataURL"),
                 "data URL exceeds published character limit",
+            ));
+        }
+        // A record whose data URL does not carry what its `mimeType` promises
+        // is self-contradictory, and sending it stores an unusable image under
+        // a type nothing can read. That is a fact about the record rather than
+        // about this envelope, so the predicate is the one `Document::validate`
+        // applies, shared rather than respelled here.
+        //
+        // Whether the type is one this crate *recognises* is deliberately not
+        // asked. The published Plus schema constrains `mimeType` to "string" —
+        // no enum, no pattern — so `MimeType::KNOWN` is this crate's
+        // vocabulary, not the transport's. Rejecting on it would refuse
+        // records the service accepts: a format newer than the crate, or a
+        // self-consistent uppercase spelling that RFC 2045 §5.1 makes
+        // equivalent but `KNOWN` does not contain. This adapter reports what
+        // it cannot confirm; it does not invent constraints the reference
+        // never published.
+        if !crate::validation::data_url_carries(
+            f["dataURL"].as_str().unwrap(),
+            f["mimeType"].as_str().unwrap(),
+        ) {
+            return Err(Error::at(
+                format!("{p}/dataURL"),
+                "expected nonempty data URL carrying the declared mimeType",
             ));
         }
         for key in ["created", "lastRetrieved", "version"] {

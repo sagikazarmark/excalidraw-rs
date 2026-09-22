@@ -26,11 +26,27 @@ import { verifyBands } from "./bands.mjs";
 import { verifyHistogram } from "./histogram.mjs";
 import { verifySteps } from "./steps.mjs";
 
-const focusedSuites = ["steps", "histogram", "bands", "error_bars", "callouts", "annotations", "series_dashes", "series_styles", "horizontal_bars", "date_axes", "log_axes", "layout", "auto_ranges", "units", "notes", "links", "library", "composition", "marks", "fills"]
-  .filter(name => process.env[`${name.toUpperCase()}_ONLY`]);
+// Every suite `enabled()` guards must appear here, or its *_ONLY selector is
+// silently ignored: an unlisted name leaves `focusedSuites` empty, and
+// `[].every(...)` is true for everything, so asking for one suite runs them
+// all. `typography` and `groups` were dispatched but unlisted, and did exactly
+// that. `assertEverySuiteIsSelectable` below keeps the two lists in step.
+const SUITES = ["typography", "groups", "steps", "histogram", "bands", "error_bars", "callouts", "annotations", "series_dashes", "series_styles", "horizontal_bars", "date_axes", "log_axes", "layout", "auto_ranges", "units", "notes", "links", "library", "composition", "marks", "fills"];
+const focusedSuites = SUITES.filter(name => process.env[`${name.toUpperCase()}_ONLY`]);
 assert.ok(focusedSuites.length <= 1, `select at most one *_ONLY suite; got ${focusedSuites.join(", ")}`);
-const enabled = name => focusedSuites.every(selected => selected === name);
-const expectedBrowser = process.env.EXPECTED_CHROMIUM_VERSION || "152.0.7977.82";
+const dispatched = new Set();
+const enabled = name => {
+  assert.ok(SUITES.includes(name), `suite ${name} is dispatched but not selectable; add it to SUITES`);
+  dispatched.add(name);
+  return focusedSuites.every(selected => selected === name);
+};
+// A requested suite that no `enabled()` call guards would also run everything.
+const assertEverySuiteIsSelectable = () =>
+  assert.deepEqual([...dispatched].sort(), [...SUITES].sort(), "every selectable suite must be dispatched");
+// dagger.dang pins the browser through its Playwright image; this fallback is
+// for local runs and must name the same build, or local evidence and CI
+// evidence are not comparable.
+const expectedBrowser = process.env.EXPECTED_CHROMIUM_VERSION || "134.0.6998.35";
 assert.match(expectedBrowser, /^\d+\.\d+\.\d+\.\d+$/, "expected an exact pinned browser version");
 
 const server = spawn(process.execPath, ["node_modules/vite/bin/vite.js", "--host", "127.0.0.1", "--port", "5173", "--strictPort"], { cwd: import.meta.dirname, stdio: "inherit" });
@@ -207,6 +223,8 @@ try {
   if (enabled("links")) report.links = await verifyLinks(page, results);
   if (enabled("notes")) report.notes = await verifyNotes(page, results);
   if (enabled("units")) report.units = await verifyUnits(page, results, compareScenes);
+  assertEverySuiteIsSelectable();
+  report.suitesRun = SUITES.filter(name => enabled(name));
   await writeFile(path.join(results, "report.json"), JSON.stringify(report, null, 2));
   console.log(report);
   console.log("Evidence:", results);

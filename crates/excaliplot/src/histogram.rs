@@ -124,7 +124,7 @@ impl<'a> HistogramChart<'a> {
         frame.validate(self.tick_count)?;
         self.x_format.validate()?;
         self.y_format.validate()?;
-        crate::cartesian::validate_opacity(self.opacity)?;
+        crate::cartesian::validate_opacity(self.opacity, crate::cartesian::MARK_OPACITY)?;
         AxisScale::Linear.validate(&self.x)?;
         AxisScale::Linear.validate(&self.y)?;
         if self.y.start > 0. || self.y.end < 0. {
@@ -194,7 +194,8 @@ impl<'a> HistogramChart<'a> {
                 })
                 .collect();
             if bins.iter().any(|(lower, upper, count)| {
-                lower.0 == upper.0 || (*count != 0. && lower.1 == upper.1)
+                lower.0 == upper.0
+                    || crate::cartesian::collapsed((0., *count), (lower.1, upper.1))
             }) {
                 return Err(Error::Invalid(
                     "histogram bin collapses at this pixel resolution; narrow bounds or increase size",

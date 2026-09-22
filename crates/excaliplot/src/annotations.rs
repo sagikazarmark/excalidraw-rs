@@ -184,7 +184,10 @@ impl<X> ShadedInterval<X> {
     where
         X: CoordinateValue,
     {
-        validate_opacity(self.opacity)?;
+        crate::cartesian::validate_opacity(
+            self.opacity,
+            "annotation opacity must be 0.005..=1.0 (visible native percent)",
+        )?;
         let x = chart.as_coord_spec().x_spec().range();
         let y = chart.as_coord_spec().y_spec().range();
         let (x, y) = match &self.position {
@@ -352,7 +355,10 @@ impl<X> ReferenceRule<X> {
                 "annotation rule width must be 1..=20 scene units",
             ));
         }
-        validate_opacity(self.opacity)?;
+        crate::cartesian::validate_opacity(
+            self.opacity,
+            "annotation opacity must be 0.005..=1.0 (visible native percent)",
+        )?;
         let x = chart.as_coord_spec().x_spec().range();
         let y = chart.as_coord_spec().y_spec().range();
         let points = match &self.position {
@@ -367,15 +373,6 @@ impl<X> ReferenceRule<X> {
             stroke_style: self.stroke_style,
         })
     }
-}
-
-fn validate_opacity(opacity: f64) -> Result<(), Error> {
-    if !opacity.is_finite() || !(0.005..=1.).contains(&opacity) {
-        return Err(Error::Invalid(
-            "annotation opacity must be 0.005..=1.0 (visible native percent)",
-        ));
-    }
-    Ok(())
 }
 
 impl MappedRule {

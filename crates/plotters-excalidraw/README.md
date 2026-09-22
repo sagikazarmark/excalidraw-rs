@@ -21,7 +21,9 @@ for distribution status and publication steps.
 
 ## Quick Start
 
-```rust
+<!-- `no_run`: the example writes into the current directory, so it is
+     compiled but not executed. -->
+```rust,no_run
 use plotters::prelude::*;
 use plotters_excalidraw::{ExcalidrawBackend, Overwrite, Scene};
 

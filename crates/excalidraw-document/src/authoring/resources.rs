@@ -1,9 +1,10 @@
-use super::{SceneAuthor, check, reindex, require_kind};
+use super::{SceneAuthor, reindex, require_kind};
 use crate::{
     BinaryFile, Document, Element, ElementKind, Error, Field, FileId, IdMap, ImageStatus,
-    LibraryItem, MimeType, Number, OpaquePolicy, Point, Profile, binary_file, element,
-    library_item, wire::pointer,
+    LibraryItem, MimeType, Number, OpaquePolicy, Point, Purpose, ValidationReport, binary_file,
+    element, library_item, wire::pointer,
 };
+use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 
 impl BinaryFile {
@@ -223,38 +224,19 @@ fn resource_id(file: &BinaryFile) -> Result<FileId, Error> {
     if id.0.is_empty() {
         return Err(Error::at("/id", "empty resource identity"));
     }
-    // Reuse the full known-field checks (including optional numeric metadata).
-    let mut document = Document::new("resource-validation");
-    document.set_files(BTreeMap::from([(id.clone(), file.clone())]));
-    check(&document, Profile::V0_18_1).map_err(|e| {
-        Error::at(
-            e.path
-                .strip_prefix(&format!("/files{}", pointer(&id.0)))
-                .unwrap_or(&e.path),
-            e.message,
-        )
-    })?;
-    let Field::Value(mime) = file.get(binary_file::MIME_TYPE)? else {
-        return Err(Error::at("/mimeType", "expected MIME type"));
-    };
-    if !MimeType::KNOWN.contains(&mime.as_str()) {
-        return Err(Error::at("/mimeType", "unsupported MIME type"));
-    }
-    let Field::Value(url) = file.get(binary_file::DATA_URL)? else {
-        return Err(Error::at("/dataURL", "expected data URL"));
-    };
-    let valid = url
-        .strip_prefix("data:")
-        .and_then(|s| s.split_once(','))
-        .is_some_and(|(header, payload)| {
-            !payload.is_empty() && header.split(';').next() == Some(mime.as_str())
-        });
-    if !valid {
-        return Err(Error::at(
-            "/dataURL",
-            "expected nonempty data URL matching MIME type",
-        ));
-    }
+    // The same record checks the scene `files` map runs, rooted at the record
+    // itself. Validating through a fabricated document would have meant
+    // stripping the invented prefix back off every diagnostic, and pinned the
+    // profile to one value regardless of the caller's.
+    let mut report = ValidationReport::default();
+    let record = Value::Object(file.as_object().clone());
+    // SelfContained, not Author: a resource being newly authored must be usable
+    // on its own, which is exactly what that purpose promises. Author would
+    // downgrade an unrecognised MIME type to a warning, which is right for a
+    // preserving document that already holds one and wrong for a record this
+    // call is creating.
+    crate::validation::binary_file_record(&mut report, "", None, &record, Purpose::SelfContained);
+    report.into_result()?;
     Ok(id)
 }
 
