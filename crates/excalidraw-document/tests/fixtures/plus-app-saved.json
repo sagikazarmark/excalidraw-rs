@@ -1,0 +1,1340 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "https://app.excalidraw.com",
+  "elements": [
+    {
+      "angle": 0,
+      "autoResize": true,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "containerId": null,
+      "fillStyle": "solid",
+      "fontFamily": 5,
+      "fontSize": 24,
+      "frameId": null,
+      "groupIds": [],
+      "height": 30,
+      "id": "aac92beb-c578-42e7-a878-60bac5e0fc18-0",
+      "index": "bsG",
+      "isDeleted": false,
+      "lineHeight": 1.25,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "originalText": "Q3 latency review",
+      "roughness": 0,
+      "roundness": null,
+      "seed": 1,
+      "strokeColor": "#1e1e1e",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "text": "Q3 latency review",
+      "textAlign": "left",
+      "type": "text",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 1868366399,
+      "verticalAlign": "top",
+      "width": 205.32,
+      "x": 0,
+      "y": 0,
+      "created": null,
+      "labelPosition": null,
+      "baseFontSize": null
+    },
+    {
+      "angle": 0,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "elbowed": false,
+      "endArrowhead": "arrow",
+      "endBinding": null,
+      "fillStyle": "solid",
+      "frameId": null,
+      "groupIds": [],
+      "height": 0,
+      "id": "aac92beb-c578-42e7-a878-60bac5e0fc18-1",
+      "index": "bsH",
+      "isDeleted": false,
+      "lastCommittedPoint": null,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          400,
+          0
+        ]
+      ],
+      "roughness": 0,
+      "roundness": null,
+      "seed": 2,
+      "startArrowhead": null,
+      "startBinding": null,
+      "strokeColor": "#1e1e1e",
+      "strokeStyle": "solid",
+      "strokeWidth": 2,
+      "type": "arrow",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 43681073,
+      "width": 400,
+      "x": 0,
+      "y": 200,
+      "created": null
+    },
+    {
+      "angle": 0,
+      "backgroundColor": "#ffffff",
+      "boundElements": [],
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "6544406d4c303d3d",
+            "ordinal": 0,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "fillStyle": "solid",
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 400,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-0",
+      "index": "bsI",
+      "isDeleted": false,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "roughness": 0,
+      "roundness": null,
+      "seed": 1,
+      "strokeColor": "transparent",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "type": "rectangle",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 1847616095,
+      "width": 640,
+      "x": 436,
+      "y": 16,
+      "created": null
+    },
+    {
+      "angle": 0,
+      "autoResize": true,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "containerId": null,
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "addf08972b4e84d5",
+            "ordinal": 1,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "fillStyle": "solid",
+      "fontFamily": 5,
+      "fontSize": 24,
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 30,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-1",
+      "index": "bsJ",
+      "isDeleted": false,
+      "lineHeight": 1.25,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "originalText": "Latency",
+      "roughness": 0,
+      "roundness": null,
+      "seed": 2,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "text": "Latency",
+      "textAlign": "left",
+      "type": "text",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 1280620305,
+      "verticalAlign": "top",
+      "width": 90.456,
+      "x": 710.7719999999999,
+      "y": 45,
+      "created": null,
+      "labelPosition": null,
+      "baseFontSize": null
+    },
+    {
+      "angle": 4.71238898038469,
+      "autoResize": true,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "containerId": null,
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "1682b5492c5e8ae0",
+            "ordinal": 2,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "fillStyle": "solid",
+      "fontFamily": 5,
+      "fontSize": 18,
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 22.5,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-2",
+      "index": "bsK",
+      "isDeleted": false,
+      "lineHeight": 1.25,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "originalText": "Value",
+      "roughness": 0,
+      "roundness": null,
+      "seed": 3,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "text": "Value",
+      "textAlign": "left",
+      "type": "text",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 1505934975,
+      "verticalAlign": "top",
+      "width": 43.704,
+      "x": 449.398,
+      "y": 192.75,
+      "created": null,
+      "labelPosition": null,
+      "baseFontSize": null
+    },
+    {
+      "angle": 0,
+      "autoResize": true,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "containerId": null,
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "7e65b02f9682e8d1",
+            "ordinal": 3,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "fillStyle": "solid",
+      "fontFamily": 5,
+      "fontSize": 18,
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 22.5,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-3",
+      "index": "bsL",
+      "isDeleted": false,
+      "lineHeight": 1.25,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "originalText": "Time",
+      "roughness": 0,
+      "roundness": null,
+      "seed": 4,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "text": "Time",
+      "textAlign": "left",
+      "type": "text",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 665693425,
+      "verticalAlign": "top",
+      "width": 41.958,
+      "x": 779.021,
+      "y": 369.5,
+      "created": null,
+      "labelPosition": null,
+      "baseFontSize": null
+    },
+    {
+      "angle": 0,
+      "autoResize": true,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "containerId": null,
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "1bfed082fca6e250",
+            "ordinal": 4,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "fillStyle": "solid",
+      "fontFamily": 5,
+      "fontSize": 16,
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 20,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-4",
+      "index": "bsM",
+      "isDeleted": false,
+      "lineHeight": 1.25,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "originalText": "0",
+      "roughness": 0,
+      "roundness": null,
+      "seed": 5,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "text": "0",
+      "textAlign": "left",
+      "type": "text",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 889493151,
+      "verticalAlign": "top",
+      "width": 10.624,
+      "x": 527.376,
+      "y": 317,
+      "created": null,
+      "labelPosition": null,
+      "baseFontSize": null
+    },
+    {
+      "angle": 0,
+      "autoResize": true,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "containerId": null,
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "6f236536158923df",
+            "ordinal": 5,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "fillStyle": "solid",
+      "fontFamily": 5,
+      "fontSize": 16,
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 20,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-5",
+      "index": "bsN",
+      "isDeleted": false,
+      "lineHeight": 1.25,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "originalText": "2",
+      "roughness": 0,
+      "roundness": null,
+      "seed": 6,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "text": "2",
+      "textAlign": "left",
+      "type": "text",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 2083317457,
+      "verticalAlign": "top",
+      "width": 11.2,
+      "x": 526.8,
+      "y": 235,
+      "created": null,
+      "labelPosition": null,
+      "baseFontSize": null
+    },
+    {
+      "angle": 0,
+      "autoResize": true,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "containerId": null,
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "08cee54247909923",
+            "ordinal": 6,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "fillStyle": "solid",
+      "fontFamily": 5,
+      "fontSize": 16,
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 20,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-6",
+      "index": "bsO",
+      "isDeleted": false,
+      "lineHeight": 1.25,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "originalText": "4",
+      "roughness": 0,
+      "roundness": null,
+      "seed": 7,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "text": "4",
+      "textAlign": "left",
+      "type": "text",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 1452698303,
+      "verticalAlign": "top",
+      "width": 9.36,
+      "x": 528.64,
+      "y": 153,
+      "created": null,
+      "labelPosition": null,
+      "baseFontSize": null
+    },
+    {
+      "angle": 0,
+      "autoResize": true,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "containerId": null,
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "3c0390cd2ba58e4c",
+            "ordinal": 7,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "fillStyle": "solid",
+      "fontFamily": 5,
+      "fontSize": 16,
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 20,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-7",
+      "index": "bsP",
+      "isDeleted": false,
+      "lineHeight": 1.25,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "originalText": "6",
+      "roughness": 0,
+      "roundness": null,
+      "seed": 8,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "text": "6",
+      "textAlign": "left",
+      "type": "text",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 1416225969,
+      "verticalAlign": "top",
+      "width": 10.24,
+      "x": 527.76,
+      "y": 70,
+      "created": null,
+      "labelPosition": null,
+      "baseFontSize": null
+    },
+    {
+      "angle": 0,
+      "autoResize": true,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "containerId": null,
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "1bfed082fca6e250",
+            "ordinal": 8,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "fillStyle": "solid",
+      "fontFamily": 5,
+      "fontSize": 16,
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 20,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-8",
+      "index": "bsQ",
+      "isDeleted": false,
+      "lineHeight": 1.25,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "originalText": "0",
+      "roughness": 0,
+      "roundness": null,
+      "seed": 9,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "text": "0",
+      "textAlign": "left",
+      "type": "text",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 1796782815,
+      "verticalAlign": "top",
+      "width": 10.624,
+      "x": 542.688,
+      "y": 338,
+      "created": null,
+      "labelPosition": null,
+      "baseFontSize": null
+    },
+    {
+      "angle": 0,
+      "autoResize": true,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "containerId": null,
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "5ecf12c7328bc816",
+            "ordinal": 9,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "fillStyle": "solid",
+      "fontFamily": 5,
+      "fontSize": 16,
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 20,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-9",
+      "index": "bsR",
+      "isDeleted": false,
+      "lineHeight": 1.25,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "originalText": "1",
+      "roughness": 0,
+      "roundness": null,
+      "seed": 10,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "text": "1",
+      "textAlign": "left",
+      "type": "text",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 2081171089,
+      "verticalAlign": "top",
+      "width": 6.832,
+      "x": 711.5840000000001,
+      "y": 338,
+      "created": null,
+      "labelPosition": null,
+      "baseFontSize": null
+    },
+    {
+      "angle": 0,
+      "autoResize": true,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "containerId": null,
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "6f236536158923df",
+            "ordinal": 10,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "fillStyle": "solid",
+      "fontFamily": 5,
+      "fontSize": 16,
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 20,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-10",
+      "index": "bsS",
+      "isDeleted": false,
+      "lineHeight": 1.25,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "originalText": "2",
+      "roughness": 0,
+      "roundness": null,
+      "seed": 11,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "text": "2",
+      "textAlign": "left",
+      "type": "text",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 924583679,
+      "verticalAlign": "top",
+      "width": 11.2,
+      "x": 877.4,
+      "y": 338,
+      "created": null,
+      "labelPosition": null,
+      "baseFontSize": null
+    },
+    {
+      "angle": 0,
+      "autoResize": true,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "containerId": null,
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "aecf7c6ee469889f",
+            "ordinal": 11,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "fillStyle": "solid",
+      "fontFamily": 5,
+      "fontSize": 16,
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 20,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-11",
+      "index": "bsT",
+      "isDeleted": false,
+      "lineHeight": 1.25,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "originalText": "3",
+      "roughness": 0,
+      "roundness": null,
+      "seed": 12,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "text": "3",
+      "textAlign": "left",
+      "type": "text",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 1573596273,
+      "verticalAlign": "top",
+      "width": 9.728,
+      "x": 1046.136,
+      "y": 338,
+      "created": null,
+      "labelPosition": null,
+      "baseFontSize": null
+    },
+    {
+      "angle": 0,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "e69c5fb7272440ac",
+            "ordinal": 12,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "endArrowhead": null,
+      "endBinding": null,
+      "fillStyle": "solid",
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 0,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-12",
+      "index": "bsU",
+      "isDeleted": false,
+      "lastCommittedPoint": null,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          513,
+          0
+        ]
+      ],
+      "roughness": 0,
+      "roundness": null,
+      "seed": 13,
+      "startArrowhead": null,
+      "startBinding": null,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "type": "line",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 421580575,
+      "width": 513,
+      "x": 538,
+      "y": 327,
+      "created": null,
+      "polygon": false
+    },
+    {
+      "angle": 0,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "8e82554ce54111e6",
+            "ordinal": 13,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "endArrowhead": null,
+      "endBinding": null,
+      "fillStyle": "solid",
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 257,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-13",
+      "index": "bsV",
+      "isDeleted": false,
+      "lastCommittedPoint": null,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          257
+        ]
+      ],
+      "roughness": 0,
+      "roundness": null,
+      "seed": 14,
+      "startArrowhead": null,
+      "startBinding": null,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "type": "line",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 560887377,
+      "width": 0,
+      "x": 548,
+      "y": 80,
+      "created": null,
+      "polygon": false
+    },
+    {
+      "angle": 0,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "819958b7443c1b60",
+            "ordinal": 14,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "endArrowhead": null,
+      "endBinding": null,
+      "fillStyle": "solid",
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 5,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-14",
+      "index": "bsW",
+      "isDeleted": false,
+      "lastCommittedPoint": null,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          5
+        ]
+      ],
+      "roughness": 0,
+      "roundness": null,
+      "seed": 15,
+      "startArrowhead": null,
+      "startBinding": null,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "type": "line",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 1268224831,
+      "width": 0,
+      "x": 715,
+      "y": 327,
+      "created": null,
+      "polygon": false
+    },
+    {
+      "angle": 0,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "819958b7443c1b60",
+            "ordinal": 15,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "endArrowhead": null,
+      "endBinding": null,
+      "fillStyle": "solid",
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 5,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-15",
+      "index": "bsX",
+      "isDeleted": false,
+      "lastCommittedPoint": null,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          5
+        ]
+      ],
+      "roughness": 0,
+      "roundness": null,
+      "seed": 16,
+      "startArrowhead": null,
+      "startBinding": null,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "type": "line",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 164463665,
+      "width": 0,
+      "x": 883,
+      "y": 327,
+      "created": null,
+      "polygon": false
+    },
+    {
+      "angle": 0,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "819958b7443c1b60",
+            "ordinal": 16,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "endArrowhead": null,
+      "endBinding": null,
+      "fillStyle": "solid",
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 5,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-16",
+      "index": "bsY",
+      "isDeleted": false,
+      "lastCommittedPoint": null,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          0,
+          5
+        ]
+      ],
+      "roughness": 0,
+      "roundness": null,
+      "seed": 17,
+      "startArrowhead": null,
+      "startBinding": null,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "type": "line",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 1726010207,
+      "width": 0,
+      "x": 1051,
+      "y": 327,
+      "created": null,
+      "polygon": false
+    },
+    {
+      "angle": 0,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "70912ce5356cab00",
+            "ordinal": 17,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "endArrowhead": null,
+      "endBinding": null,
+      "fillStyle": "solid",
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 0,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-17",
+      "index": "bsZ",
+      "isDeleted": false,
+      "lastCommittedPoint": null,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "roughness": 0,
+      "roundness": null,
+      "seed": 18,
+      "startArrowhead": null,
+      "startBinding": null,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "type": "line",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 315610641,
+      "width": 5,
+      "x": 543,
+      "y": 245,
+      "created": null,
+      "polygon": false
+    },
+    {
+      "angle": 0,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "70912ce5356cab00",
+            "ordinal": 18,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "endArrowhead": null,
+      "endBinding": null,
+      "fillStyle": "solid",
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 0,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-18",
+      "index": "bsa",
+      "isDeleted": false,
+      "lastCommittedPoint": null,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "roughness": 0,
+      "roundness": null,
+      "seed": 19,
+      "startArrowhead": null,
+      "startBinding": null,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "type": "line",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 592252799,
+      "width": 5,
+      "x": 543,
+      "y": 163,
+      "created": null,
+      "polygon": false
+    },
+    {
+      "angle": 0,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "70912ce5356cab00",
+            "ordinal": 19,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "endArrowhead": null,
+      "endBinding": null,
+      "fillStyle": "solid",
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 0,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-19",
+      "index": "bsb",
+      "isDeleted": false,
+      "lastCommittedPoint": null,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          5,
+          0
+        ]
+      ],
+      "roughness": 0,
+      "roundness": null,
+      "seed": 20,
+      "startArrowhead": null,
+      "startBinding": null,
+      "strokeColor": "#000000",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "type": "line",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 1332538353,
+      "width": 5,
+      "x": 543,
+      "y": 80,
+      "created": null,
+      "polygon": false
+    },
+    {
+      "angle": 0,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "f8740d7df4904ed6",
+            "ordinal": 20,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "endArrowhead": null,
+      "endBinding": null,
+      "fillStyle": "solid",
+      "frameId": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "groupIds": [
+        "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-group-0"
+      ],
+      "height": 123,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-20",
+      "index": "bsc",
+      "isDeleted": false,
+      "lastCommittedPoint": null,
+      "link": null,
+      "locked": false,
+      "opacity": 100,
+      "points": [
+        [
+          0,
+          0
+        ],
+        [
+          167,
+          -123
+        ],
+        [
+          335,
+          -41
+        ],
+        [
+          503,
+          -82
+        ]
+      ],
+      "roughness": 0,
+      "roundness": null,
+      "seed": 21,
+      "startArrowhead": null,
+      "startBinding": null,
+      "strokeColor": "#1971c2",
+      "strokeStyle": "solid",
+      "strokeWidth": 3,
+      "type": "line",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 1528612767,
+      "width": 503,
+      "x": 548,
+      "y": 245,
+      "created": null,
+      "polygon": false
+    },
+    {
+      "angle": 0,
+      "backgroundColor": "transparent",
+      "boundElements": [],
+      "customData": {
+        "excaliplot": {
+          "attributes": {
+            "count": 22,
+            "fingerprint": "de48061aa75967ee",
+            "ordinal": 21,
+            "specRev": 1
+          },
+          "role": "chart",
+          "schemaVersion": 1,
+          "sourceKey": "latency"
+        }
+      },
+      "fillStyle": "solid",
+      "frameId": null,
+      "groupIds": [],
+      "height": 432,
+      "id": "68a05d37-2aa6-4e3c-ad9c-8dcf82881735-21",
+      "index": "bsd",
+      "isDeleted": false,
+      "link": null,
+      "locked": false,
+      "name": "chart latency",
+      "opacity": 100,
+      "roughness": 0,
+      "roundness": null,
+      "seed": 22,
+      "strokeColor": "#bbb",
+      "strokeStyle": "solid",
+      "strokeWidth": 1,
+      "type": "frame",
+      "updated": 1790126978402,
+      "version": 3,
+      "versionNonce": 128730577,
+      "width": 672,
+      "x": 420,
+      "y": 0,
+      "created": null
+    }
+  ],
+  "appState": {
+    "gridSize": 20,
+    "gridStep": 5,
+    "gridModeEnabled": true,
+    "viewBackgroundColor": "#ffffff",
+    "lockedMultiSelections": {}
+  },
+  "files": {}
+}
