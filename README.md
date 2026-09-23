@@ -1,7 +1,7 @@
-# Excaliplot
+# excalidraw-rs
 
-[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/sagikazarmark/excaliplot/dagger.yaml?style=flat-square)](https://github.com/sagikazarmark/excaliplot/actions/workflows/dagger.yaml)
-[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/sagikazarmark/excaliplot/badge?style=flat-square)](https://securityscorecards.dev/viewer/?uri=github.com/sagikazarmark/excaliplot)
+[![GitHub Workflow Status](https://img.shields.io/github/actions/workflow/status/sagikazarmark/excalidraw-rs/dagger.yaml?style=flat-square)](https://github.com/sagikazarmark/excalidraw-rs/actions/workflows/dagger.yaml)
+[![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/sagikazarmark/excalidraw-rs/badge?style=flat-square)](https://securityscorecards.dev/viewer/?uri=github.com/sagikazarmark/excalidraw-rs)
 [![crates.io](https://img.shields.io/crates/v/excaliplot?style=flat-square)](https://crates.io/crates/excaliplot)
 [![docs.rs](https://img.shields.io/docsrs/excaliplot?style=flat-square)](https://docs.rs/excaliplot)
 

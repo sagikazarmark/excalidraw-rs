@@ -1,7 +1,7 @@
 # Native browser checks
 
 For the complete current fixture generation and browser checks, run
-`dagger check excaliplot:compatibility:charts:full`; see [Dagger workflows](../docs/dagger.md).
+`dagger check excalidraw-rs:compatibility:charts:full`; see [Dagger workflows](../docs/dagger.md).
 The [release guide](../docs/releasing.md#verification) covers workspace/package
 verification. [Phase 2](../docs/phase-2/README.md) retains historical typography evidence.
 
