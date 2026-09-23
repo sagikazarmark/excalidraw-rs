@@ -17,5 +17,7 @@ plotters = { workspace = true }
 plotters-backend = { workspace = true }
 
 [dev-dependencies]
+# PROTOTYPE only: prototype_chart_regenerate validates its output documents.
+excalidraw-document = { path = "../excalidraw-document" }
 serde_json = { workspace = true }
 tempfile = { workspace = true }

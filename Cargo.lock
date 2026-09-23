@@ -234,6 +234,7 @@ name = "excaliplot"
 version = "0.2.0"
 dependencies = [
  "chrono",
+ "excalidraw-document",
  "plotters",
  "plotters-backend",
  "plotters-excalidraw",
