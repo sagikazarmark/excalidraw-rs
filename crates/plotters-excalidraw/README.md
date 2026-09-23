@@ -73,7 +73,7 @@ sibling frames. Primitive emission appends checked records directly, avoiding a
 whole-scene clone/validation for every mark. Font measurement, paint conversion,
 bounds, drawing scopes and failed-drawing export protection remain backend-owned.
 
-From the workspace, run `devenv shell dagger check excaliplot:compatibility:charts` for native
+From the workspace, run `devenv shell dagger check excalidraw-rs:compatibility:charts` for native
 composition, library, callout and link/provenance acceptance with freshly generated
 fixtures, plus full chart acceptance. These checks also run as part of the root `dagger check` workflow.
 

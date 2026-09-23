@@ -1,4 +1,4 @@
-[modules.excaliplot]
+[modules.excalidraw-rs]
 source = "."
 entrypoint = true
 

@@ -89,5 +89,5 @@ Rust/editor PNG/SVG payloads and extracted documents. Extended failures retain t
 error, completed stages and best-effort scene/screenshot evidence.
 
 ```sh
-devenv shell dagger check excaliplot:compatibility:document
+devenv shell dagger check excalidraw-rs:compatibility:document
 ```

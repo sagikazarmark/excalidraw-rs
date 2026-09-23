@@ -1,4 +1,4 @@
-type Excaliplot {
+type ExcalidrawRs {
   let source: Directory!
   let rustContainer: Container!
 
@@ -195,7 +195,7 @@ type CompatibilityChecks {
         ".",
         source.filter(include: ["package.json", "package-lock.json"]),
       )
-      .withMountedCache("/root/.npm", Dagger.cacheVolume("excaliplot-npm"))
+      .withMountedCache("/root/.npm", Dagger.cacheVolume("excalidraw-rs-npm"))
       .withExec(["npm", "ci"])
 
     let chromium = container.withExec([
