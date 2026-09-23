@@ -66,6 +66,19 @@ fn released_profile_rejects_the_upgraded_fields() {
             ("polygon profile Error", 9),
         ])
     );
+
+    let (valid, counts) = summary(Profile::V0_18_1, Purpose::Inspect);
+    assert!(valid, "inspection downgrades the mismatch to warnings");
+    assert_eq!(
+        counts,
+        expected(&[
+            ("baseFontSize profile Warning", 12),
+            ("created profile Warning", 24),
+            ("labelPosition profile Warning", 12),
+            ("lockedMultiSelections profile Warning", 1),
+            ("polygon profile Warning", 9),
+        ])
+    );
 }
 
 #[test]
