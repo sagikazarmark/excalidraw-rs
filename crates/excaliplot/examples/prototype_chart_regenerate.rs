@@ -11,6 +11,8 @@
 //! in the agent's store, never in the scene.
 //!
 //! Run: `cargo run -p excaliplot --example prototype_chart_regenerate`
+//! Check an editor-saved file: `... -- inspect <file>`, or compare fingerprints
+//! of a generated file and its editor-saved copy: `... -- compare <a> <b>`.
 //! Writes one file per stage to `output/prototype-chart-regenerate/`,
 //! overwriting them on every run, so each step can be opened in the editor.
 
@@ -33,23 +35,34 @@ struct Spec {
 
 // ---------------------------------------------------------------- tagging
 
-/// Fields that change when a chart is merely moved, reordered, bound to,
-/// grouped or pasted. Anything else changing means the user edited the element.
-const VOLATILE: &[&str] = &[
-    "id",
-    "seed",
-    "x",
-    "y",
-    "version",
-    "versionNonce",
-    "updated",
-    "customData",
-    "frameId",
-    "groupIds",
-    "boundElements",
-    "index",
-    "locked",
-    "link",
+/// Fields a user changes when they edit the element itself. An allowlist, not a
+/// denylist: an editor save adds fields (`created: null` on every element and
+/// `polygon: false` on lines in 0.18.1), and a denylist flags each one as an edit.
+/// Moving, binding, grouping, framing, reordering and pasting touch none of these.
+const FINGERPRINTED: &[&str] = &[
+    "type",
+    "width",
+    "height",
+    "angle",
+    "strokeColor",
+    "backgroundColor",
+    "fillStyle",
+    "strokeWidth",
+    "strokeStyle",
+    "roughness",
+    "opacity",
+    "roundness",
+    "points",
+    "text",
+    "originalText",
+    "fontSize",
+    "fontFamily",
+    "textAlign",
+    "verticalAlign",
+    "lineHeight",
+    "name",
+    "startArrowhead",
+    "endArrowhead",
 ];
 
 fn render(chart: &str, rev: u64, spec: &Spec) -> Res<Vec<Value>> {
@@ -97,9 +110,7 @@ fn tag(e: &Value) -> Option<Tag> {
 /// the value is stable across toolchains (unlike `DefaultHasher`).
 fn fingerprint(e: &Value) -> String {
     let mut o = e.as_object().cloned().unwrap_or_default();
-    for k in VOLATILE {
-        o.remove(*k);
-    }
+    o.retain(|k, _| FINGERPRINTED.contains(&k.as_str()));
     let mut h: u64 = 0xcbf2_9ce4_8422_2325;
     for b in canonical(&Value::Object(o)).bytes() {
         h ^= u64::from(b);
@@ -596,6 +607,47 @@ fn print_report(r: &Report) {
 }
 
 fn main() -> Res<()> {
+    // `compare <generated> <saved>`: recompute fingerprints on both files with
+    // the current field list and name every element whose value moved.
+    if let [_, cmd, a, b] = &std::env::args().collect::<Vec<_>>()[..]
+        && cmd == "compare"
+    {
+        let read = |p: &str| -> Res<BTreeMap<String, String>> {
+            let doc: Value = serde_json::from_slice(&std::fs::read(p)?)?;
+            Ok(doc["elements"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|e| (e["id"].as_str().unwrap().to_owned(), fingerprint(e)))
+                .collect())
+        };
+        let (a, b) = (read(a)?, read(b)?);
+        let changed: Vec<_> = a.iter().filter(|(id, f)| b.get(*id) != Some(*f)).collect();
+        println!(
+            "{} elements, {} fingerprint(s) differ: {changed:?}",
+            a.len(),
+            changed.len()
+        );
+        return Ok(());
+    }
+    // `inspect <file>`: run the find step on a file saved by the editor.
+    if let [_, cmd, path] = &std::env::args().collect::<Vec<_>>()[..]
+        && cmd == "inspect"
+    {
+        let doc: Value = serde_json::from_slice(&std::fs::read(path)?)?;
+        for (id, f) in charts(&doc) {
+            println!(
+                "chart {id:?} rev {}: {}/{} live, modified {:?}, missing {:?}, duplicated {}",
+                f.rev,
+                f.live.len(),
+                f.count,
+                f.modified,
+                f.missing,
+                f.duplicated.len()
+            );
+        }
+        return Ok(());
+    }
     std::fs::create_dir_all(DIR)?;
     let v1 = Spec {
         title: "Latency",
