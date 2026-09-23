@@ -17,14 +17,14 @@ recolor, and annotate them. Generation runs entirely in Rust.
 | [`excaliplot`](crates/excaliplot/README.md) | Ready-made charts with validated data, measured layout, legends, and annotations. |
 | [`plotters-excalidraw`](crates/plotters-excalidraw/README.md) | An Excalidraw backend for ordinary Plotters code, plus scene composition and export. |
 | [`excalidraw-document`](crates/excalidraw-document/README.md) | Preserving, inspecting, editing, validating, and authoring scene/library JSON with typed fields and explicit editor profiles. |
+| [`excalidraw-api`](crates/excalidraw-api/README.md) | Reading and writing scenes in an Excalidraw Plus workspace over the public REST API. |
 
 Chart helpers include lines, scatter, bars, areas, pie/donut, supplied bands and
 error bars, histograms, and steps/ECDFs. They support numeric and calendar axes,
 sketch styling, grouping, borders, frames, and native library export.
 
-The workspace is at **0.1.0 (initial release candidate)** with a pre-1.0 API.
-The instructions below use a checkout; see [releasing](docs/releasing.md)
-for distribution and publication steps.
+The workspace is at **0.2.0** with a pre-1.0 API. The instructions below run
+the examples from a checkout.
 
 ## Run the first chart
 
@@ -40,11 +40,11 @@ explicitly replace generated output; save manual edits to a separate path.
 
 ## Use your own data
 
-Add the checkout as a dependency (adjust the path):
+Add it as a dependency:
 
 ```toml
 [dependencies]
-excaliplot = { path = "../excaliplot.orig/crates/excaliplot", version = "0.1.0" }
+excaliplot = "0.2"
 ```
 
 ```rust

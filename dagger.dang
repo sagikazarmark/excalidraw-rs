@@ -17,6 +17,54 @@ type Excaliplot {
   }
 
   """
+  Report drift in the pinned Excalidraw Plus OpenAPI artifact.
+
+  Fetches the live document and compares it with the bytes `excalidraw-api` was
+  written against. A network failure passes with a warning so an unrelated PR is
+  not blocked by an outage; an actual content change fails, because the API is
+  public beta and a changed contract needs a human to look at it.
+
+  This check never rewrites the fixture. On failure, review the diff, update the
+  crate and `OPENAPI_SNAPSHOT`, then re-pin deliberately.
+  """
+  apiDrift: String! @check {
+    let expected = self
+      .source
+      .file("crates/excalidraw-api/tests/fixtures/openapi.json")
+
+    self
+      .rustContainer
+      .withExec(["sh", "-ec", "command -v curl >/dev/null || (apt-get update && apt-get install -y --no-install-recommends curl ca-certificates && rm -rf /var/lib/apt/lists/*)"])
+      .withFile("/pinned/openapi.json", expected)
+      .withExec(
+        [
+          "sh", "-ec",
+          """
+          set -e
+          if ! curl -fsSL --max-time 60 https://api.excalidraw.com/docs/json -o /tmp/live.json; then
+            echo "WARNING: could not fetch the live OpenAPI document; drift not checked"
+            exit 0
+          fi
+          pinned=$(sha256sum /pinned/openapi.json | cut -d" " -f1)
+          live=$(sha256sum /tmp/live.json | cut -d" " -f1)
+          if [ "$pinned" = "$live" ]; then
+            echo "no drift: $pinned"
+            exit 0
+          fi
+          echo "DRIFT: the published OpenAPI document changed."
+          echo "  pinned: $pinned ($(wc -c < /pinned/openapi.json) bytes)"
+          echo "  live:   $live ($(wc -c < /tmp/live.json) bytes)"
+          echo "Review before updating crates/excalidraw-api: the crate's types,"
+          echo "OPENAPI_SNAPSHOT and tests/openapi_snapshot.rs were written against"
+          echo "the pinned bytes. Do not adopt the change silently."
+          exit 1
+          """,
+        ],
+      )
+      .stdout
+  }
+
+  """
   Build all workspace example executables.
   """
   let buildExamples: Directory! {

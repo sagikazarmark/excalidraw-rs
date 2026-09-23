@@ -25,6 +25,22 @@ tag-name = "v{{version}}"
 [[workspace.metadata.dagger.modules]]
 name = "rust"
 hack.check = ["--locked", "--each-feature"]
-hack.test = ["--locked", "--workspace-behavior=cargo"]
+# Tests run with every feature enabled. The default build of `excalidraw-api` is
+# `default = []`, so a plain `cargo test` compiles none of its HTTP client and
+# `tests/live_experiments.rs` (gated on `blocking`) expands to nothing. Feature
+# isolation is already covered by `hack.check --each-feature` above; this line
+# exists so the feature-gated code is executed, not merely type-checked.
+#
+# The features are listed one by one instead of `--all-features`: cargo-hack
+# owns `--features`, but forwards a flag it does not know to the position
+# *before* the subcommand (`cargo --all-features test`), where cargo rejects it.
+# Keep this list in sync when a crate gains a feature; `blocking` and `retry`
+# pull in `client`, `client-core` and `provider-ring` transitively.
+hack.test = [
+  "--locked",
+  "--features",
+  "excalidraw-api/blocking,excalidraw-api/retry,excalidraw-document/embedded",
+  "--workspace-behavior=cargo",
+]
 hack.clippy = ["--locked", "--workspace-behavior=cargo"]
 hack.doc = ["--locked", "--workspace-behavior=cargo"]

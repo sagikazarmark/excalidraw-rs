@@ -204,7 +204,10 @@ impl<'a> ErrorBarChart<'a> {
             ));
         }
         crate::cartesian::validate_radius(self.radius)?;
-        crate::cartesian::validate_opacity(self.opacity)?;
+        crate::cartesian::validate_opacity(
+            self.opacity,
+            "error bar opacity must round to a visible value in 1..=100 percent",
+        )?;
         crate::typography::measure(self.interpretation, f64::from(TICK_SIZE))?;
         if self.interpretation.trim().is_empty() {
             return Err(Error::Invalid("interval interpretation must not be empty"));
@@ -256,15 +259,12 @@ impl<'a> ErrorBarChart<'a> {
         )?;
         let extents = self.extents();
         let extent = extents.horizontal.ceil() as u32;
-        let label_width = crate::typography::measure(self.interpretation, f64::from(TICK_SIZE))?.0;
-        if self.legend && label_width > f64::from(self.size.0) {
-            return Err(Error::Invalid("legend label exceeds chart width").into());
-        }
-        let legend = if self.legend {
-            label_width.ceil() as u32 + 28 + 8 + 2 * extent
-        } else {
-            0
-        };
+        let legend = crate::cartesian::single_legend_width(
+            self.interpretation,
+            self.legend,
+            self.size.0,
+            2 * extent,
+        )?;
         let layout = frame.layout([xt.max_width(), yt.max_width()], legend)?;
         let root = ExcalidrawBackend::new(scene, self.size)?.into_drawing_area();
         root.fill(&WHITE)?;
@@ -279,7 +279,7 @@ impl<'a> ErrorBarChart<'a> {
                 let (x, lower) = chart.plotting_area().map_coordinate(&(observation.x, observation.lower));
                 let (_, estimate) = chart.plotting_area().map_coordinate(&(observation.x, observation.estimate));
                 let (_, upper) = chart.plotting_area().map_coordinate(&(observation.x, observation.upper));
-                if observation.lower != observation.upper && lower == upper {
+                if crate::cartesian::collapsed((observation.lower, observation.upper), (lower, upper)) {
                     return Err(Error::Invalid("nonzero interval collapses at this pixel resolution; narrow bounds or increase size").into());
                 }
                 let Extents { half_stroke, marker: marker_extent, horizontal } = extents;
@@ -306,7 +306,7 @@ impl<'a> ErrorBarChart<'a> {
         })?;
         if self.legend {
             series.scope(|| -> DrawResult {
-                let x = (self.size.0 - MARGIN - legend + 12 + extent) as i32;
+                let x = crate::cartesian::legend_left(self.size.0, legend) + extent as i32;
                 // Keep eight visible units of stem between the full marker and
                 // each cap stroke. The schematic remains asymmetric and its
                 // complete height stays above the bottom label area.

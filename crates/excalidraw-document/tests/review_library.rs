@@ -209,3 +209,97 @@ fn legacy_extension_collection_never_becomes_the_active_typed_items() {
         );
     }
 }
+
+/// A library document has no standard `files` field, so an image inside a
+/// library item cannot carry its resource and must not be reported as if it
+/// could. Before this was scoped, every image-bearing library item failed
+/// `SelfContained` on a diagnostic no caller could act on.
+#[test]
+fn an_image_in_a_library_item_is_not_a_dangling_resource_reference() {
+    let library = LibraryDocument::from_value(json!({
+        "type": "excalidrawlib",
+        "version": 2,
+        "source": "test",
+        "libraryItems": [{
+            "id": "item",
+            "status": "unpublished",
+            "created": 1,
+            "elements": [{
+                "type": "image", "id": "img", "x": 0, "y": 0, "width": 10, "height": 10,
+                "angle": 0, "strokeColor": "#000000", "backgroundColor": "transparent",
+                "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid",
+                "roughness": 1, "opacity": 100, "seed": 1, "version": 1,
+                "versionNonce": 1, "isDeleted": false, "groupIds": [], "frameId": null,
+                "boundElements": null, "updated": 1, "link": null, "locked": false,
+                "roundness": null, "fileId": "resource-1", "status": "saved",
+                "scale": [1, 1], "index": "a0"
+            }]
+        }]
+    }))
+    .unwrap();
+
+    for profile in PROFILES {
+        for purpose in PURPOSES {
+            let report = library.validate(profile, purpose);
+            assert!(
+                !report.diagnostics.iter().any(|d| d.code == "missing-file"),
+                "{purpose:?}/{profile:?} reported a resource a library cannot carry: {report:?}"
+            );
+        }
+    }
+}
+
+/// Diagnostics are rewritten into the library's own path space, but messages
+/// were not. A message naming `/elements/1` inside `/libraryItems/0/elements/2`
+/// points at a location that does not exist in the document being validated.
+#[test]
+fn a_diagnostic_message_never_cites_a_path_outside_the_document_it_describes() {
+    let element = |id: &str, extra: Value| {
+        let mut base = json!({
+            "type": "rectangle", "id": id, "x": 0, "y": 0, "width": 10, "height": 10,
+            "angle": 0, "strokeColor": "#000000", "backgroundColor": "transparent",
+            "fillStyle": "solid", "strokeWidth": 1, "strokeStyle": "solid",
+            "roughness": 1, "opacity": 100, "seed": 1, "version": 1,
+            "versionNonce": 1, "isDeleted": false, "groupIds": [], "frameId": null,
+            "boundElements": null, "updated": 1, "link": null, "locked": false,
+            "roundness": null, "index": "a0"
+        });
+        let object = base.as_object_mut().unwrap();
+        for (k, v) in extra.as_object().unwrap() {
+            object.insert(k.clone(), v.clone());
+        }
+        base
+    };
+    // One container with two live labels: the second reports `multiple-labels`
+    // and names the first.
+    let library = LibraryDocument::from_value(json!({
+        "type": "excalidrawlib", "version": 2, "source": "test",
+        "libraryItems": [{
+            "id": "item", "status": "unpublished", "created": 1,
+            "elements": [
+                element("box", json!({"boundElements": [{"id": "t1", "type": "text"}, {"id": "t2", "type": "text"}]})),
+                element("t1", json!({"type": "text", "containerId": "box", "text": "a", "originalText": "a", "fontSize": 16, "fontFamily": 5, "textAlign": "left", "verticalAlign": "top", "lineHeight": 1.25})),
+                element("t2", json!({"type": "text", "containerId": "box", "text": "b", "originalText": "b", "fontSize": 16, "fontFamily": 5, "textAlign": "left", "verticalAlign": "top", "lineHeight": 1.25})),
+            ]
+        }]
+    }))
+    .unwrap();
+
+    let report = library.validate(Profile::V0_18_1, Purpose::Author);
+    let labels: Vec<_> = report
+        .diagnostics
+        .iter()
+        .filter(|d| d.code == "multiple-labels")
+        .collect();
+    assert!(!labels.is_empty(), "expected the conflict: {report:?}");
+    for d in labels {
+        assert!(
+            d.path.starts_with("/libraryItems/0/elements/"),
+            "path not rooted in the library: {d:?}"
+        );
+        assert!(
+            !d.message.contains("/elements/"),
+            "message cites a path outside this document: {d:?}"
+        );
+    }
+}

@@ -11,15 +11,12 @@ wire-field vocabulary of Excalidraw **0.18.1** and source snapshot
 
 ## Install
 
-Requires Rust **1.97+**. To use a local checkout, adjust the path:
+Requires Rust **1.97+**.
 
 ```toml
 [dependencies]
-excalidraw-document = { path = "../excaliplot.orig/crates/excalidraw-document", version = "0.1.0" }
+excalidraw-document = "0.2"
 ```
-
-See the [release guide](https://github.com/sagikazarmark/excaliplot.orig/blob/main/docs/releasing.md)
-for distribution status and publication steps.
 
 ## Quick Start
 

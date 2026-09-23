@@ -28,6 +28,31 @@ const FREEHAND: &[&str] = &["pressures", "simulatePressure", "strokeOptions"];
 const IMAGE: &[&str] = &["fileId", "status", "scale", "crop"];
 
 /// Unknown keys remain extensions; common fields apply to every known kind.
+/// Whether `field` is meaningful on an element of `kind`.
+///
+/// This is a *tolerance* predicate, and deliberately only that: `false` means
+/// "this crate does not interpret the field here", which callers treat as a
+/// reason to leave data alone, not as an error. It is total for unknown kinds —
+/// callers guard before calling — and it is not a static table, because elbow
+/// arrow fields depend on a sibling field's value.
+///
+/// Four other tables are indexed by the same `(kind, field)` pair and answer
+/// different questions. They are not spellings of one fact and should not be
+/// merged:
+///
+/// | Table | Question |
+/// | --- | --- |
+/// | this function | is the field legal here? |
+/// | [`required`](super::required) (`validation.rs`) | must it be present, for this profile and purpose? |
+/// | [`Element::new`](crate::Element::new) (`model.rs`) | what value does a new element get? |
+/// | `migration.rs` | what does profile conversion do to it? |
+/// | [`ELEMENT_REFERENCES`](crate::model::ELEMENT_REFERENCES) (`model.rs`) | what identities can it carry? |
+///
+/// The differences are load-bearing. `labelPosition` applies to text but is
+/// never required. `polygon` applies to a line under every profile, yet
+/// `V0_18_1` rejects it outright. `startBinding` applies to `draw` but is
+/// required only on `line` and `arrow`. Collapsing these columns would make
+/// historical documents fail validation they currently pass.
 pub(crate) fn applies(kind: &str, field: &str, object: &Object) -> bool {
     if TEXT.contains(&field) {
         return kind == "text";
@@ -166,23 +191,22 @@ pub(super) fn check(
         for key in ["fontSize", "lineHeight", "baseFontSize"] {
             positive(report, object, path, key);
         }
-        if let Some(Value::Number(value)) = object.get("fontFamily") {
-            match Number(value.clone()).as_safe_integer() {
-                Ok(id)
-                    if matches!(id, 1..=3 | 5..=9)
-                        || (id == 10 && profile == Profile::SnapshotAfa3a653) => {}
-                _ => report.issue(
-                    format!("{path}/fontFamily"),
-                    "font-family",
-                    compatibility_severity(purpose),
-                    "font ID is not in the selected editor's primary font registry",
-                ),
-            }
+        // The registry is `KnownFont`'s to state. Re-spelling the ID ranges here
+        // is how the two drift.
+        if let Some(Value::Number(value)) = object.get("fontFamily")
+            && crate::KnownFont::from_number(profile, &Number(value.clone())).is_none()
+        {
+            report.issue(
+                format!("{path}/fontFamily"),
+                "font-family",
+                compatibility_severity(purpose),
+                "font ID is not in the selected editor's primary font registry",
+            );
         }
     }
     if let Some(roundness) = object.get("roundness").and_then(Value::as_object) {
         if let Some(Value::Number(value)) = roundness.get("type")
-            && !matches!(Number(value.clone()).as_safe_integer(), Ok(1..=3))
+            && crate::KnownRoundness::from_number(profile, &Number(value.clone())).is_none()
         {
             report.issue(
                 format!("{path}/roundness/type"),

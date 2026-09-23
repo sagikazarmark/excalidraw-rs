@@ -1,0 +1,92 @@
+{
+  "type": "excalidraw",
+  "version": 2,
+  "source": "https://excalidraw.com",
+  "elements": [
+    {
+      "id": "Kx7mQp2vLnR4sTfWb9YzA",
+      "type": "rectangle",
+      "x": 100.5,
+      "y": 200.25,
+      "width": 120,
+      "height": 60,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": {
+        "type": 3
+      },
+      "roughness": 1,
+      "opacity": 100,
+      "seed": 1234567,
+      "version": 42,
+      "versionNonce": 987654321,
+      "index": "a1",
+      "updated": 1789000000000,
+      "isDeleted": false,
+      "locked": false,
+      "groupIds": [],
+      "frameId": null,
+      "boundElements": [
+        {
+          "id": "Dq3nHjW8xVcMb5PtLr2Ks",
+          "type": "text"
+        }
+      ],
+      "link": null,
+      "customData": {
+        "excaliplot": {
+          "series": "measured"
+        }
+      }
+    },
+    {
+      "id": "Dq3nHjW8xVcMb5PtLr2Ks",
+      "type": "text",
+      "x": 110,
+      "y": 220,
+      "width": 84,
+      "height": 25,
+      "angle": 0,
+      "strokeColor": "#1e1e1e",
+      "backgroundColor": "transparent",
+      "fillStyle": "solid",
+      "strokeWidth": 2,
+      "strokeStyle": "solid",
+      "roundness": null,
+      "roughness": 1,
+      "opacity": 100,
+      "seed": 7654321,
+      "version": 12,
+      "versionNonce": 123456789,
+      "index": "a2",
+      "updated": 1789000000001,
+      "isDeleted": false,
+      "locked": false,
+      "groupIds": [],
+      "frameId": null,
+      "boundElements": null,
+      "link": null,
+      "customData": null,
+      "fontSize": 20,
+      "fontFamily": 5,
+      "text": "Hello",
+      "textAlign": "center",
+      "verticalAlign": "middle",
+      "containerId": "Kx7mQp2vLnR4sTfWb9YzA",
+      "originalText": "Hello",
+      "autoResize": true,
+      "lineHeight": 1.25
+    }
+  ],
+  "appState": {
+    "viewBackgroundColor": "#ffffff",
+    "gridSize": 20,
+    "gridStep": 5,
+    "gridModeEnabled": false
+  },
+  "files": {}
+}

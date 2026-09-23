@@ -83,6 +83,10 @@ impl KnownFont {
             Self::Assistant => "Assistant",
         }
     }
+    /// The upstream `FONT_FAMILY` ID, which does not depend on a profile.
+    /// `Assistant` is ID 10 in both pinned sources; whether the selected
+    /// editor's primary registry carries it is the separate question that
+    /// [`in_registry`](Self::in_registry) answers.
     pub fn to_number(self) -> Number {
         Number::from(match self {
             Self::Virgil => 1_i64,
@@ -96,8 +100,18 @@ impl KnownFont {
             Self::Assistant => 10,
         })
     }
+    /// Whether `profile`'s primary font registry carries this font. Only
+    /// `Assistant` differs between the pinned profiles: it is snapshot-only.
+    /// This is the one place that rule is stated; validation asks it rather
+    /// than re-spelling the ID ranges.
+    pub fn in_registry(self, profile: Profile) -> bool {
+        self != Self::Assistant || profile == Profile::SnapshotAfa3a653
+    }
+    /// Decode a primary-registry ID for `profile`. `None` covers IDs outside the
+    /// registry entirely — reserved 4 and the fallback-only entries — and IDs
+    /// naming a font this profile does not carry.
     pub fn from_number(profile: Profile, number: &Number) -> Option<Self> {
-        Some(match number.as_safe_integer().ok()? {
+        let font = match number.as_safe_integer().ok()? {
             1 => Self::Virgil,
             2 => Self::Helvetica,
             3 => Self::Cascadia,
@@ -106,9 +120,10 @@ impl KnownFont {
             7 => Self::LilitaOne,
             8 => Self::ComicShanns,
             9 => Self::LiberationSans,
-            10 if profile == Profile::SnapshotAfa3a653 => Self::Assistant,
+            10 => Self::Assistant,
             _ => return None,
-        })
+        };
+        font.in_registry(profile).then_some(font)
     }
 }
 

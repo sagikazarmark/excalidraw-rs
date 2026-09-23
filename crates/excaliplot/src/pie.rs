@@ -1,11 +1,10 @@
+use crate::cartesian::{LEGEND_ROW_HEIGHT, LEGEND_TOP, MARGIN};
 use crate::{Error, ExcalidrawBackend, Scene, SketchStyle};
 use plotters::prelude::*;
 use plotters_backend::text_anchor::{HPos, Pos, VPos};
 use std::f64::consts::{PI, TAU};
 
-const MARGIN: u32 = 24;
-const LEGEND_TOP: u32 = 90;
-const LEGEND_ROW: u32 = 30;
+/// Sized for the legend, not for ticks: a pie has no axes to match.
 const LEGEND_FONT: u32 = 16;
 const LEGEND_LABEL_OFFSET: u32 = 25;
 const LEGEND_GAP: u32 = 16;
@@ -121,7 +120,7 @@ impl<'a> PieChart<'a> {
                                 let root = ExcalidrawBackend::new(&mut scene, self.size)?
                                     .into_drawing_area();
                                 let x = legend_left(self.size.0) as i32;
-                                let y = (LEGEND_TOP + i as u32 * LEGEND_ROW) as i32;
+                                let y = (LEGEND_TOP + i as u32 * LEGEND_ROW_HEIGHT) as i32;
                                 root.draw(&Rectangle::new(
                                     [(x, y + 3), (x + 16, y + 17)],
                                     slice.color.filled(),
@@ -167,7 +166,7 @@ impl<'a> PieChart<'a> {
                 "donut needs at least two slices, a hole fraction in (0,1), and a hole/ring at least two scene units wide",
             ));
         }
-        if self.slices.len() as u64 * u64::from(LEGEND_ROW)
+        if self.slices.len() as u64 * u64::from(LEGEND_ROW_HEIGHT)
             > u64::from(self.size.1 - LEGEND_TOP - MARGIN)
         {
             return Err(Error::Invalid("pie legend exceeds chart height"));

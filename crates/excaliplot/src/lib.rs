@@ -97,6 +97,13 @@
 //! are descriptive and may repeat on copy, unlike remapped element identities.
 //! There is no live refresh or metadata-driven regeneration.
 
+// The README's example is a contract too, and nothing compiled it.
+// `cfg(doctest)` compiles its fences without prepending the README to the
+// rendered crate documentation.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+mod readme {}
+
 mod annotations;
 mod axis;
 mod bands;

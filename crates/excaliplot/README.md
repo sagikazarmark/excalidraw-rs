@@ -12,19 +12,18 @@ high-level charts and direct Plotters drawings can share the same scene.
 
 ## Install
 
-Requires Rust **1.97+**. To use a local checkout, adjust the path:
+Requires Rust **1.97+**.
 
 ```toml
 [dependencies]
-excaliplot = { path = "../excaliplot.orig/crates/excaliplot", version = "0.1.0" }
+excaliplot = "0.2"
 ```
-
-See the [release guide](https://github.com/sagikazarmark/excaliplot.orig/blob/main/docs/releasing.md)
-for distribution status and publication steps.
 
 ## Quick Start
 
-```rust
+<!-- `no_run`: the example writes into the current directory, so it is
+     compiled but not executed. -->
+```rust,no_run
 use excaliplot::{LineChart, Overwrite};
 
 let scene = LineChart::new(&[(1., 2.), (5., 8.), (9., 4.)], 0.0..10.0, 0.0..10.0)
@@ -42,8 +41,8 @@ protect existing exports. An explicit destination is used as given.
 
 For ordinary Plotters code without the chart helpers, depend on
 [`plotters-excalidraw`](https://crates.io/crates/plotters-excalidraw) instead.
-See the [usage guide](https://github.com/sagikazarmark/excaliplot.orig/blob/main/docs/usage.md)
-for the complete chart catalog, supported inputs, and editor compatibility.
+See the [API documentation](https://docs.rs/excaliplot) for every chart type and
+its options.
 
 ## License
 

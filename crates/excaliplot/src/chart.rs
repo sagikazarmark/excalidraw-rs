@@ -1,4 +1,6 @@
-use crate::cartesian::{self, Frame, Layout, MARGIN, TICK_SIZE, Ticks, X_LABEL_AREA};
+use crate::cartesian::{
+    self, Frame, LEGEND_ROW_HEIGHT, LEGEND_TOP, Layout, TICK_SIZE, Ticks, X_LABEL_AREA,
+};
 use crate::{
     AxisScale, DrawingGroup, Error, ExcalidrawBackend, Scene, SketchStyle, StrokeStyle, TickFormat,
 };
@@ -6,8 +8,6 @@ use plotters::prelude::*;
 use std::ops::Range;
 
 const TICK_COUNT: usize = 6;
-const LEGEND_ROW_HEIGHT: u32 = 30;
-const LEGEND_TOP: u32 = 90;
 
 /// Native Cartesian legend placement. Named constructors default to `Right`;
 /// unnamed constructors default to `Off` and have no legend names to display.
@@ -240,6 +240,8 @@ impl<'a> LineChart<'a> {
 /// stacking requires nonnegative values on a shared, strictly increasing X grid.
 pub struct AreaChart<'a> {
     chart: Chart<'a>,
+    baseline: f64,
+    opacity: f64,
 }
 
 impl<'a> AreaChart<'a> {
@@ -260,11 +262,14 @@ impl<'a> AreaChart<'a> {
     pub fn new(points: &'a [(f64, f64)], x: Range<f64>, y: Range<f64>) -> Self {
         let mut chart = Chart::new(points, x, y);
         chart.title = "Area chart";
-        chart.marks = Marks::Area {
+        // The mark payload is owned here and assembled in `render`. Keeping it
+        // out of `chart.marks` is what stops the setters below from depending
+        // on a variant match that can miss without saying so.
+        Self {
+            chart,
             baseline: 0.0,
             opacity: 0.35,
-        };
-        Self { chart }
+        }
     }
     /// Overlapping areas, painted in input order with a shared baseline.
     pub fn from_series(series: &[NamedSeries<'a>], x: Range<f64>, y: Range<f64>) -> Self {
@@ -287,15 +292,11 @@ impl<'a> AreaChart<'a> {
     }
     /// Fill alpha in 0.005..=1.0; the separate data-edge border remains opaque.
     pub fn opacity(mut self, opacity: f64) -> Self {
-        if let Marks::Area { opacity: alpha, .. } = &mut self.chart.marks {
-            *alpha = opacity;
-        }
+        self.opacity = opacity;
         self
     }
     pub fn baseline(mut self, baseline: f64) -> Self {
-        if let Marks::Area { baseline: base, .. } = &mut self.chart.marks {
-            *base = baseline;
-        }
+        self.baseline = baseline;
         self
     }
     pub fn labels(mut self, title: &'a str, x: &'a str, y: &'a str) -> Self {
@@ -311,7 +312,12 @@ impl<'a> AreaChart<'a> {
         self
     }
     pub fn render(&self) -> Result<Scene, Error> {
-        self.chart.render()
+        let mut chart = self.chart.clone();
+        chart.marks = Marks::Area {
+            baseline: self.baseline,
+            opacity: self.opacity,
+        };
+        chart.render()
     }
 }
 
@@ -360,6 +366,9 @@ enum Marks<'a> {
 /// Numeric scatter with one native ellipse per input point; input order is retained.
 pub struct ScatterChart<'a> {
     chart: Chart<'a>,
+    radius: u32,
+    fill: bool,
+    opacity: f64,
 }
 
 impl<'a> ScatterChart<'a> {
@@ -380,12 +389,13 @@ impl<'a> ScatterChart<'a> {
     pub fn new(points: &'a [(f64, f64)], x: Range<f64>, y: Range<f64>) -> Self {
         let mut chart = Chart::new(points, x, y);
         chart.title = "Scatter chart";
-        chart.marks = Marks::Scatter {
+        // Owned here rather than in `chart.marks`; see `AreaChart::new`.
+        Self {
+            chart,
             radius: 5,
             fill: true,
             opacity: 1.0,
-        };
-        Self { chart }
+        }
     }
     /// Uses the measured native legend route, with an ellipse swatch per series.
     pub fn from_series(series: &[NamedSeries<'a>], x: Range<f64>, y: Range<f64>) -> Self {
@@ -396,19 +406,12 @@ impl<'a> ScatterChart<'a> {
         chart
     }
     pub fn marker(mut self, radius: u32, fill: bool) -> Self {
-        if let Marks::Scatter {
-            radius: r, fill: f, ..
-        } = &mut self.chart.marks
-        {
-            *r = radius;
-            *f = fill;
-        }
+        self.radius = radius;
+        self.fill = fill;
         self
     }
     pub fn opacity(mut self, opacity: f64) -> Self {
-        if let Marks::Scatter { opacity: alpha, .. } = &mut self.chart.marks {
-            *alpha = opacity;
-        }
+        self.opacity = opacity;
         self
     }
     pub fn labels(mut self, title: &'a str, x: &'a str, y: &'a str) -> Self {
@@ -424,7 +427,13 @@ impl<'a> ScatterChart<'a> {
         self
     }
     pub fn render(&self) -> Result<Scene, Error> {
-        self.chart.render()
+        let mut chart = self.chart.clone();
+        chart.marks = Marks::Scatter {
+            radius: self.radius,
+            fill: self.fill,
+            opacity: self.opacity,
+        };
+        chart.render()
     }
 }
 
@@ -432,6 +441,10 @@ impl<'a> ScatterChart<'a> {
 /// are grouped side by side by default; stacks require nonnegative values.
 pub struct BarChart<'a> {
     data: BarData<'a>,
+    /// Category labels in input order. `BarData::Multiple` does not carry them,
+    /// so `render` reads them from here rather than re-deriving them from the
+    /// mark variant it just set.
+    categories: Vec<&'a str>,
     chart: Chart<'a>,
 }
 
@@ -466,9 +479,11 @@ impl<'a> BarChart<'a> {
         let mut chart = Chart::new(&[], 0.0..data.len() as f64, y);
         chart.title = "Bar chart";
         chart.x_label = "Category";
-        chart.marks = Marks::Bars(data.iter().map(|&(label, _)| label).collect());
+        let categories: Vec<&'a str> = data.iter().map(|&(label, _)| label).collect();
+        chart.marks = Marks::Bars(categories.clone());
         Self {
             data: BarData::Single(data),
+            categories,
             chart,
         }
     }
@@ -484,9 +499,11 @@ impl<'a> BarChart<'a> {
         chart.x_label = "Category";
         chart.legend = true;
         chart.named = true;
-        chart.marks = Marks::Bars(categories.to_vec());
+        let categories = categories.to_vec();
+        chart.marks = Marks::Bars(categories.clone());
         Self {
             data: BarData::Multiple(series.to_vec()),
+            categories,
             chart,
         }
     }
@@ -527,9 +544,7 @@ impl<'a> BarChart<'a> {
                 vec![("", RGBColor(25, 113, 194))],
             ),
             BarData::Multiple(series) => {
-                let Marks::Bars(labels) = &self.chart.marks else {
-                    unreachable!()
-                };
+                let labels = &self.categories;
                 if series.iter().any(|s| s.values.len() != labels.len()) {
                     return Err(Error::Invalid(
                         "bar series must have one value per category",
@@ -684,11 +699,10 @@ impl<'a> Chart<'a> {
             return Err(Error::Invalid("chart needs at least one series"));
         }
         if let Marks::Area { baseline, opacity } = self.marks {
-            if !opacity.is_finite() || !(0.005..=1.0).contains(&opacity) {
-                return Err(Error::Invalid(
-                    "area opacity must round to a visible value in 1..=100 percent",
-                ));
-            }
+            cartesian::validate_opacity(
+                opacity,
+                "area opacity must round to a visible value in 1..=100 percent",
+            )?;
             if !baseline.is_finite() || baseline < self.y.start || baseline > self.y.end {
                 return Err(Error::Invalid(
                     "area baseline must be finite and inside Y bounds",
@@ -742,7 +756,10 @@ impl<'a> Chart<'a> {
                 ));
             }
             if let Some(opacity) = series.opacity {
-                cartesian::validate_opacity(opacity)?;
+                cartesian::validate_opacity(
+                    opacity,
+                    "series opacity must round to a visible value in 1..=100 percent",
+                )?;
             }
             if let Some((radius, _)) = series.marker {
                 cartesian::validate_radius(radius)?;
@@ -859,7 +876,11 @@ impl<'a> Chart<'a> {
         if width > f64::from(self.size.0) {
             return Err(Error::Invalid("legend label exceeds chart width"));
         }
-        Ok(width.ceil() as u32 + 28 + self.legend_label_gap() + self.legend_swatch_width())
+        Ok(crate::cartesian::legend_width(
+            width,
+            self.legend_label_gap(),
+            self.legend_swatch_width(),
+        ))
     }
 
     fn legend_marker_extent(&self) -> u32 {
@@ -1123,7 +1144,7 @@ impl<'a> Chart<'a> {
                 if matches!(self.marks, Marks::Bars(_)) {
                     for (index, &band) in bands[series_index].iter().enumerate() {
                         let [a, b] = self.bar_corners(series_index, index, band).map(|p| chart.plotting_area().map_coordinate(&p));
-                        let (category_collapsed, value_collapsed) = if self.horizontal { (a.1 == b.1, a.0 == b.0) } else { (a.0 == b.0, a.1 == b.1) };
+                        let (category, value) = if self.horizontal { ((a.1, b.1), (a.0, b.0)) } else { ((a.0, b.0), (a.1, b.1)) };
                         if self.horizontal && series_index > 0 {
                             let previous = self.bar_corners(series_index - 1, index, band)
                                 .map(|p| chart.plotting_area().map_coordinate(&p));
@@ -1131,7 +1152,7 @@ impl<'a> Chart<'a> {
                                 return Err(Error::Invalid("grouped bar slots are crowded at this pixel resolution; increase chart height").into());
                             }
                         }
-                        if category_collapsed || (band.0 != band.1 && value_collapsed) {
+                        if category.0 == category.1 || cartesian::collapsed(band, value) {
                             return Err(
                                 Error::Invalid("bar collapses at this pixel resolution").into()
                             );
@@ -1216,7 +1237,7 @@ impl<'a> Chart<'a> {
             for callout in callouts { root.draw(&callout)?; }
             // Legend is deliberately emitted later, re-entering the explicit group.
             if self.legend {
-                let x = (self.size.0 - MARGIN - legend_width + 12) as i32;
+                let x = cartesian::legend_left(self.size.0, legend_width);
                 for (index, (series, group)) in self.series.iter().zip(&groups).enumerate() {
                     let row_height = self.legend_row_height();
                     let y = (LEGEND_TOP + index as u32 * row_height) as i32;

@@ -32,6 +32,13 @@
 //! links and library export are available without depending on Plotters itself.
 //! For ready-made chart helpers, use the `excaliplot` crate.
 
+// The README's example is a contract too, and nothing compiled it.
+// `cfg(doctest)` compiles its fences without prepending the README to the
+// rendered crate documentation.
+#[cfg(doctest)]
+#[doc = include_str!("../README.md")]
+mod readme {}
+
 mod backend;
 mod options;
 mod provenance;
